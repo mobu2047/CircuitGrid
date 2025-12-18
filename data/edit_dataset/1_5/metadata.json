@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_5",
+  "base_description": "This electrical network is composed of 5 nodes with 6 branches. For passive elements, the circuit contains 5 resistor(s). The circuit is powered by 1 voltage source(s). There are no controlled sources in this circuit. No measurements are configured. In total, this circuit comprises 6 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Update resistance 1: change its value from 72kΩ to 500kΩ."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Set the resistance 4 to 14kΩ (previously 29kΩ)."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Change the resistive element (labeled 5) from 52Ω to 156Ω."
+    }
+  ]
+}

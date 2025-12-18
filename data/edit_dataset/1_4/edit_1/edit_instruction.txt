@@ -1,0 +1,1 @@
+Update resistor 2: change its value from 50Ω to 250kΩ.

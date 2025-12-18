@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_19",
+  "base_description": "This circuit consists of 10 nodes and 17 branches. Regarding passive components, there are 10 resistor(s). For power supply, the circuit has 6 current source(s). There are no controlled sources in this circuit. No measurements are configured. In total, this circuit comprises 16 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Change the resistive element (labeled 8) from 93mΩ to 186mΩ."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Modify the value of resistive element 9 from 22kΩ to 4kΩ."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Modify the value of resistive element 6 from 13Ω to 130Ω."
+    }
+  ]
+}

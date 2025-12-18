@@ -1,0 +1,1 @@
+Set the resistor 4 to 3Ω (previously 32Ω).

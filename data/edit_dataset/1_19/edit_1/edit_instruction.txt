@@ -1,0 +1,1 @@
+Change the resistive element (labeled 8) from 93mΩ to 186mΩ.

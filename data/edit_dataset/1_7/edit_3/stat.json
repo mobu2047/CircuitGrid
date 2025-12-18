@@ -1,0 +1,13 @@
+{
+  "num_nodes": 10,
+  "num_branches": 14,
+  "num_resistors": 7,
+  "num_capacitors": 0,
+  "num_inductors": 0,
+  "num_voltage_sources": 4,
+  "num_current_sources": 1,
+  "num_controlled_sources": 2,
+  "num_shorts": 0,
+  "num_voltage_measurements": 1,
+  "num_current_measurements": 0
+}

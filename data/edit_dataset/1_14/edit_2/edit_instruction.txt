@@ -1,0 +1,1 @@
+Change the resistor (labeled 1) from 42Ω to 8Ω.

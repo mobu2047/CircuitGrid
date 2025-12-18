@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_11",
+  "base_description": "The circuit structure includes 7 nodes and 10 interconnecting branches. The passive components include 4 resistor(s). The circuit is powered by 4 current source(s). Additionally, 1 controlled source(s) are present. Measurement setup includes 2 current measurement(s). In total, this circuit comprises 9 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Set the resistance 2 to 1Ω (previously 93Ω)."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Adjust the resistive element 4 parameter from 57Ω to 20Ω."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Adjust the resistor 3 parameter from 37mΩ to 111kΩ."
+    }
+  ]
+}

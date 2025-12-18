@@ -1,0 +1,1 @@
+Replace the 80Ω resistive element (8) with a 8Ω one.

@@ -1,0 +1,1 @@
+The circuit structure includes 5 nodes and 9 interconnecting branches. The passive components include 4 resistor(s). Energy is supplied through 1 voltage source(s), 2 current source(s). Additionally, 1 controlled source(s) are present. Measurement setup includes 2 current measurement(s). In total, this circuit comprises 8 circuit elements.

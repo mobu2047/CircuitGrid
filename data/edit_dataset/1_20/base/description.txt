@@ -1,0 +1,1 @@
+This electrical network is composed of 8 nodes with 11 branches. The passive components include 6 resistive element(s). Energy is supplied through 3 voltage source(s), 1 current source(s). Additionally, 1 controlled source(s) are present. Measurement setup includes 1 voltage measurement(s), 1 current measurement(s). In total, this circuit comprises 11 circuit elements.

@@ -1,0 +1,1 @@
+Adjust the resistor 2 parameter from 74mΩ to 1mΩ.

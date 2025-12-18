@@ -1,0 +1,621 @@
+{
+  "m": 4,
+  "n": 4,
+  "vertical_dis": [
+    9.0,
+    6.0,
+    3.0,
+    0.0
+  ],
+  "horizontal_dis": [
+    9.0,
+    6.0,
+    3.0,
+    0.0
+  ],
+  "has_vedge": [
+    [
+      1,
+      0,
+      1,
+      1
+    ],
+    [
+      1,
+      0,
+      1,
+      1
+    ],
+    [
+      1,
+      0,
+      1,
+      1
+    ]
+  ],
+  "has_hedge": [
+    [
+      1,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1
+    ]
+  ],
+  "vcomp_type": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      3,
+      0,
+      0,
+      3
+    ],
+    [
+      1,
+      0,
+      3,
+      0
+    ]
+  ],
+  "hcomp_type": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "vcomp_label": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      4
+    ],
+    [
+      1,
+      0,
+      3,
+      0
+    ]
+  ],
+  "hcomp_label": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "vcomp_value": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      10,
+      0,
+      0,
+      18
+    ],
+    [
+      12,
+      0,
+      50,
+      0
+    ]
+  ],
+  "hcomp_value": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "vcomp_value_unit": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      0
+    ]
+  ],
+  "hcomp_value_unit": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "vcomp_direction": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "hcomp_direction": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "vcomp_measure": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "hcomp_measure": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "vcomp_measure_label": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "hcomp_measure_label": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "vcomp_measure_direction": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "hcomp_measure_direction": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "vcomp_control_meas_label": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "hcomp_control_meas_label": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ]
+  ],
+  "node_comp_type": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "node_comp_label": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "node_comp_orientation": [
+    [
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      1
+    ]
+  ],
+  "node_comp_connections": [
+    [
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      null,
+      {
+        "collector": [
+          6.0,
+          9.0
+        ],
+        "base": [
+          3.0,
+          6.0
+        ],
+        "emitter": [
+          6.0,
+          0.0
+        ]
+      },
+      null,
+      null
+    ],
+    [
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      null,
+      null,
+      null,
+      null
+    ]
+  ],
+  "branches": [
+    {
+      "n1": "0",
+      "n2": "2",
+      "type": 3,
+      "label": 2,
+      "value": 10,
+      "value_unit": 1,
+      "measure": 0,
+      "measure_label": 0,
+      "meas_comp_same_direction": true,
+      "control_measure_label": 0,
+      "info": "",
+      "order": 0
+    },
+    {
+      "n1": "0",
+      "n2": "4",
+      "type": 3,
+      "label": 4,
+      "value": 18,
+      "value_unit": 1,
+      "measure": 0,
+      "measure_label": 0,
+      "meas_comp_same_direction": true,
+      "control_measure_label": 0,
+      "info": "",
+      "order": 1
+    },
+    {
+      "n1": "2",
+      "n2": "4",
+      "type": 1,
+      "label": 1,
+      "value": 12,
+      "value_unit": 0,
+      "measure": 0,
+      "measure_label": 0,
+      "meas_comp_same_direction": true,
+      "control_measure_label": 0,
+      "info": "",
+      "order": 2
+    },
+    {
+      "n1": "0",
+      "n2": "4",
+      "type": 3,
+      "label": 3,
+      "value": 50,
+      "value_unit": 1,
+      "measure": 0,
+      "measure_label": 0,
+      "meas_comp_same_direction": true,
+      "control_measure_label": 0,
+      "info": "",
+      "order": 3
+    },
+    {
+      "type": 1,
+      "label": 1,
+      "base_node": "0",
+      "collector_node": "0",
+      "emitter_node": "4",
+      "orientation": 1,
+      "is_node_component": true,
+      "order": 4
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Update resistive element 1: change its value from 75Ω to 500Ω.

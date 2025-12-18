@@ -1,0 +1,1 @@
+Update resistance 3: change its value from 65Ω to 13Ω.

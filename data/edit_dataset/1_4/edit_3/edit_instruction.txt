@@ -1,0 +1,1 @@
+Set the resistance 4 to 5Ω (previously 46Ω).

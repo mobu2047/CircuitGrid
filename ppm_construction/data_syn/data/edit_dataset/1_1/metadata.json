@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_1",
+  "base_description": "This electrical network is composed of 6 nodes with 7 branches. The passive components include 4 resistor(s). The circuit is powered by 2 current source(s). The circuit also features 1 dependent source(s). Measurement setup includes 1 voltage measurement(s). In total, this circuit comprises 7 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Adjust the resistive element 4 parameter from 56Ω to 5Ω."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Replace the 79A current supply (2) with a 39A one."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Set the resistor 3 to 164Ω (previously 82Ω)."
+    }
+  ]
+}

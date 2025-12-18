@@ -1,0 +1,1 @@
+Change the resistance (labeled 6) from 23Ω to 10Ω.

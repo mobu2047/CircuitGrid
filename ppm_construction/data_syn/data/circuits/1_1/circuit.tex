@@ -1,0 +1,55 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\tikzset{every node/.style={font=\large}}
+\tikzset{every draw/.style={font=\large}}
+\begin{document}
+\begin{center}
+\begin{circuitikz}[line width=1pt]
+\ctikzset{tripoles/en amp/input height=0.5};
+\ctikzset{inductors/scale=1.2, inductor=american}
+\draw (0.5,-0.4) to[cisource] (3.3,-0.4);
+\draw[-latexslim] (1.5,0.2) to (2.3,0.2);
+\node at (1.9, 0.6) {$27 U_{  }$};
+\draw (0.5,-0.4) to [short] (0.5,2.7);
+\ctikzset{american};
+\draw (0.5,-0.4) to[rmeter, t, v=$9 \mathrm{ kV }$] (0.5,2.7);
+\ctikzset{european};
+\ctikzset{american};
+\draw (5.9,-0.4) to [short, v=$93 U_{  }$] (3.3,-0.4);
+\ctikzset{european};
+\draw (5.9,-0.4) to[cvsource] (3.3,-0.4);\draw (3.3,-0.4) to[generic, l=$89 \mathrm{ m\Omega }$, ] (3.3,2.7);
+\draw (5.9,-0.4) to[generic, l=$62 \mathrm{ k\Omega }$, ] (5.9,2.7);
+\draw (0.5,2.7) to[generic, l=$26 \mathrm{ k\Omega }$, ] (3.3,2.7);
+\ctikzset{american};
+\draw (0.5,6.4) to [short, v=$11 U_{  }$] (0.5,2.7);
+\ctikzset{european};
+\draw (0.5,6.4) to[cvsource] (0.5,2.7);\draw (3.3,2.7) to[short] (5.9,2.7);
+\draw (5.9,2.7) to[I] (5.9,6.4);
+\draw[-latexslim] (5.3,4.2) to (5.3,5.0);
+\node at (4.9, 4.6) {$81 \mathrm{ kA }$};
+\ctikzset{american}
+\draw (5.9,2.7) to[rmeter, v=$U$] (5.9,6.4);
+\ctikzset{european}
+\draw (0.5,6.4) to[generic, l=$95 \mathrm{ m\Omega }$, ] (3.3,6.4);
+\ctikzset{american}
+\draw (0.5,6.4) to[generic, v=$U_{0}$] (3.3,6.4);
+\ctikzset{european}
+\draw (0.5,6.4) to[I] (0.5,8.5);
+\draw (0.5,6.4) to[rmeter, f_>=$96 \mathrm{ A }$] (0.5,8.5);
+\draw (5.9,6.4) to[generic, l=$54 \mathrm{ \Omega }$, ] (3.3,6.4);
+\ctikzset{american}
+\draw (3.3,6.4) to[generic, v^=$U_{2}$] (5.9,6.4);
+\ctikzset{european}
+\draw (3.3,8.5) to [short] (3.3,6.4);
+\ctikzset{american};
+\draw (3.3,8.5) to[rmeter, t, v=$6 \mathrm{ V }$] (3.3,6.4);
+\ctikzset{european};
+\draw (3.3,6.4) to[rmeter, f>_=$I_{9}$] (3.3,8.5);
+\draw (5.9,8.5) to[short] (5.9,6.4);
+\draw (3.3,8.5) to[short] (0.5,8.5);
+\draw (5.9,8.5) to[short] (3.3,8.5);
+
+\end{circuitikz}
+\end{center}
+\end{document}

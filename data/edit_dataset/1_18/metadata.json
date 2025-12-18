@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_18",
+  "base_description": "This circuit consists of 8 nodes and 12 branches. The passive components include 7 resistive element(s). Energy is supplied through 3 voltage source(s), 1 current source(s). There are no controlled sources in this circuit. No measurements are configured. In total, this circuit comprises 11 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Modify the value of resistive element 5 from 44Ω to 132Ω."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Set the resistor 4 to 3Ω (previously 32Ω)."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Modify the value of resistance 3 from 2Ω to 10Ω."
+    }
+  ]
+}

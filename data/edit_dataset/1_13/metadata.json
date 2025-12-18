@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_13",
+  "base_description": "Analyzing the topology, we find 8 nodes and 10 branches in this circuit. For passive elements, the circuit contains 4 resistor(s). For power supply, the circuit has 5 voltage source(s), 1 current source(s). There are no controlled sources in this circuit. No measurements are configured. In total, this circuit comprises 10 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Update DC voltage source 3: change its value from 2V to 1V."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Update voltage supply 5: change its value from 81mV to 243kV."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Set the voltage supply 1 to 50V (previously 78V)."
+    }
+  ]
+}

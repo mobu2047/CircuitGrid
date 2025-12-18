@@ -1,0 +1,1 @@
+Change the resistor (labeled 3) from 98mΩ to 5mΩ.

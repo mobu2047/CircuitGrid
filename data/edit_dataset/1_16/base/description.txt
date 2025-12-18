@@ -1,0 +1,1 @@
+This electrical network is composed of 5 nodes with 7 branches. The passive components include 5 resistive element(s). Energy is supplied through 2 voltage source(s). There are no controlled sources in this circuit. Measurement setup includes 2 voltage measurement(s), 1 current measurement(s). In total, this circuit comprises 7 circuit elements.

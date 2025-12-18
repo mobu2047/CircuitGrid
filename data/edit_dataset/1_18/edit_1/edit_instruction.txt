@@ -1,0 +1,1 @@
+Modify the value of resistive element 5 from 44Ω to 132Ω.

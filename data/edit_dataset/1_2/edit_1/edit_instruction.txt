@@ -1,0 +1,1 @@
+Adjust the resistor 3 parameter from 11Ω to 55Ω.

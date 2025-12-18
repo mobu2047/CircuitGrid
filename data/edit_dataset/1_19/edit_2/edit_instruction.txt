@@ -1,0 +1,1 @@
+Modify the value of resistive element 9 from 22kΩ to 4kΩ.

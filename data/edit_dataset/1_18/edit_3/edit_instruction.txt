@@ -1,0 +1,1 @@
+Modify the value of resistance 3 from 2Ω to 10Ω.

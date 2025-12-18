@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_9",
+  "base_description": "Analyzing the topology, we find 4 nodes and 4 branches in this circuit. For passive elements, the circuit contains 3 resistor(s). Energy is supplied through 1 current source(s). There are no controlled sources in this circuit. No measurements are configured. In total, this circuit comprises 4 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Change the resistor (labeled 3) from 98mΩ to 5mΩ."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Change the DC current source (labeled 1) from 94A to 18A."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Update resistance 1: change its value from 65Ω to 100Ω."
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Update resistance 4: change its value from 26Ω to 1Ω.

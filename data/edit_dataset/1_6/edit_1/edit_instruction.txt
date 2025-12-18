@@ -1,0 +1,1 @@
+Replace the 31Ω resistor (6) with a 15kΩ one.

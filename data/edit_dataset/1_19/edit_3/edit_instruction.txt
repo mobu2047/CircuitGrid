@@ -1,0 +1,1 @@
+Modify the value of resistive element 6 from 13Ω to 130Ω.

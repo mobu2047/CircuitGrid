@@ -1,0 +1,1 @@
+This electrical network is composed of 6 nodes with 7 branches. The passive components include 4 resistor(s). The circuit is powered by 2 current source(s). The circuit also features 1 dependent source(s). Measurement setup includes 1 voltage measurement(s). In total, this circuit comprises 7 circuit elements.

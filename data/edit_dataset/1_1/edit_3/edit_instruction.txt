@@ -1,0 +1,1 @@
+Change the resistive element (labeled 5) from 99Ω to 297Ω.

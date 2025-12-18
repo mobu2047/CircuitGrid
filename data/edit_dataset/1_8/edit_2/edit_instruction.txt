@@ -1,0 +1,1 @@
+Update DC current source 1: change its value from 60A to 12A.

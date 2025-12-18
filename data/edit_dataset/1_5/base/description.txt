@@ -1,0 +1,1 @@
+This electrical network is composed of 5 nodes with 6 branches. For passive elements, the circuit contains 5 resistor(s). The circuit is powered by 1 voltage source(s). There are no controlled sources in this circuit. No measurements are configured. In total, this circuit comprises 6 circuit elements.

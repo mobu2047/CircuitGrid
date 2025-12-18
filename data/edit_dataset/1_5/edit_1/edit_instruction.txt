@@ -1,0 +1,1 @@
+Update resistance 1: change its value from 72kΩ to 500kΩ.

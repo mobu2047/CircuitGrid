@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_15",
+  "base_description": "The circuit structure includes 5 nodes and 5 interconnecting branches. The passive components include 4 resistive element(s). The circuit is powered by 1 current source(s). There are no controlled sources in this circuit. Measurement setup includes 1 voltage measurement(s). In total, this circuit comprises 5 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Adjust the current source 1 parameter from 82A to 246A."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Change the resistive element (labeled 1) from 88Ω to 880Ω."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Modify the value of resistive element 2 from 67Ω to 5Ω."
+    }
+  ]
+}

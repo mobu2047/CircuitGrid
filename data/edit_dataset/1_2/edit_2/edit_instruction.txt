@@ -1,0 +1,1 @@
+Update resistor 4: change its value from 22Ω to 2Ω.

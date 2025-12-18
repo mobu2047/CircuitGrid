@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_17",
+  "base_description": "Analyzing the topology, we find 6 nodes and 7 branches in this circuit. For passive elements, the circuit contains 4 resistive element(s). The circuit is powered by 1 voltage source(s), 1 current source(s). The circuit also features 1 dependent source(s). Measurement setup includes 1 voltage measurement(s), 1 current measurement(s). In total, this circuit comprises 7 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Update resistive element 1: change its value from 75Ω to 500Ω."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Set the resistive element 4 to 4kΩ (previously 40kΩ)."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Set the DC voltage source 1 to 5V (previously 10V)."
+    }
+  ]
+}

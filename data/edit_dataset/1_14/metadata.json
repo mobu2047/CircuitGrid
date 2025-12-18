@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_14",
+  "base_description": "Analyzing the topology, we find 5 nodes and 5 branches in this circuit. For passive elements, the circuit contains 2 resistor(s). For power supply, the circuit has 1 voltage source(s). The circuit also features 2 dependent source(s). No measurements are configured. In total, this circuit comprises 5 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Adjust the resistor 2 parameter from 74mΩ to 1mΩ."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Change the resistor (labeled 1) from 42Ω to 8Ω."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Update voltage source 1: change its value from 6V to 3V."
+    }
+  ]
+}

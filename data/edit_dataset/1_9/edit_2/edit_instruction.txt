@@ -1,0 +1,1 @@
+Change the DC current source (labeled 1) from 94A to 18A.

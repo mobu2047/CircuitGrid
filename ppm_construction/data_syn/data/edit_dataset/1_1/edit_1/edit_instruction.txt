@@ -1,0 +1,1 @@
+Adjust the resistive element 4 parameter from 56Ω to 5Ω.

@@ -1,0 +1,1 @@
+Update resistive element 6: change its value from 24Ω to 50Ω.

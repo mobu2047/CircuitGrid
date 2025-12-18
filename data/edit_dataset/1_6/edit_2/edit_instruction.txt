@@ -1,0 +1,1 @@
+Replace the 83Ω resistive element (2) with a 249Ω one.

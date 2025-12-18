@@ -1,0 +1,1 @@
+The circuit structure includes 5 nodes and 5 interconnecting branches. The passive components include 4 resistive element(s). The circuit is powered by 1 current source(s). There are no controlled sources in this circuit. Measurement setup includes 1 voltage measurement(s). In total, this circuit comprises 5 circuit elements.

@@ -1,0 +1,1 @@
+This circuit consists of 14 nodes and 20 branches. The passive components include 10 resistive element(s). For power supply, the circuit has 5 voltage source(s), 3 current source(s). Additionally, 1 controlled source(s) are present. Measurement setup includes 1 voltage measurement(s). In total, this circuit comprises 19 circuit elements.

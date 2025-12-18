@@ -1,0 +1,1 @@
+Modify the value of resistive element 2 from 67Ω to 5Ω.

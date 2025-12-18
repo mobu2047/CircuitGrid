@@ -1,0 +1,1 @@
+Set the resistive element 2 to 2Ω (previously 14Ω).

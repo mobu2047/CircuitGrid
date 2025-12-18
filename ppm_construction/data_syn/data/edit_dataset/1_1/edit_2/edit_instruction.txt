@@ -1,0 +1,1 @@
+Replace the 79A current supply (2) with a 39A one.

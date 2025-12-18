@@ -1,0 +1,1 @@
+This circuit consists of 8 nodes and 12 branches. The passive components include 7 resistive element(s). Energy is supplied through 3 voltage source(s), 1 current source(s). There are no controlled sources in this circuit. No measurements are configured. In total, this circuit comprises 11 circuit elements.

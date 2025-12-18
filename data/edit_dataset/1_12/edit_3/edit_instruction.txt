@@ -1,0 +1,1 @@
+Change the current supply (labeled 2) from 39mA to 200kA.

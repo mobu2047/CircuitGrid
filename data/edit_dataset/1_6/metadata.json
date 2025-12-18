@@ -1,0 +1,21 @@
+{
+  "circuit_id": "1_6",
+  "base_description": "This electrical network is composed of 9 nodes with 13 branches. The passive components include 7 resistive element(s). The circuit is powered by 2 voltage source(s), 2 current source(s). There are no controlled sources in this circuit. Measurement setup includes 1 voltage measurement(s). In total, this circuit comprises 11 circuit elements.",
+  "edits": [
+    {
+      "edit_id": "edit_1",
+      "edit_type": "parameter_change",
+      "instruction": "Replace the 31Ω resistor (6) with a 15kΩ one."
+    },
+    {
+      "edit_id": "edit_2",
+      "edit_type": "parameter_change",
+      "instruction": "Replace the 83Ω resistive element (2) with a 249Ω one."
+    },
+    {
+      "edit_id": "edit_3",
+      "edit_type": "parameter_change",
+      "instruction": "Modify the value of voltage supply 2 from 19kV to 95kV."
+    }
+  ]
+}
