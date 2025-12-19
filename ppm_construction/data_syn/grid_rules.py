@@ -577,6 +577,9 @@ class Circuit:
                 node_comp_orientation = None,    # 节点元件朝向 (m, n): 0=up, 1=right, 2=down, 3=left
                 node_comp_connections = None,    # 节点元件连接信息 (m, n) - dict
 
+                # 交叉点标记（实心圆点）
+                junction_marker = None,          # (m, n) 1=显示实心圆点, 0=不显示
+
                 use_value_annotation = False,
                 note = "v11",
                 id = "",
@@ -626,6 +629,9 @@ class Circuit:
                     self.node_comp_connections[i][j] = None
         else:
             self.node_comp_connections = node_comp_connections
+
+        # 交叉点标记：1=显示实心圆点（导线连接处），0=不显示
+        self.junction_marker = np.zeros((m, n), dtype=int) if junction_marker is None else junction_marker
 
         self.use_value_annotation = use_value_annotation # MEAS: True: annotate value in the figure / False: annotate label in the figure
 
@@ -685,43 +691,178 @@ class Circuit:
                     return i, j
         return None, None
     
+    def _count_edges(self, i, j):
+        """计算节点 (i,j) 有几条短路边"""
+        m, n = self.m, self.n
+        count = 0
+        # 上边
+        if i > 0 and self.has_vedge[i-1][j] and self.vcomp_type[i-1][j] == TYPE_SHORT:
+            count += 1
+        # 下边
+        if i < m-1 and self.has_vedge[i][j] and self.vcomp_type[i][j] == TYPE_SHORT:
+            count += 1
+        # 左边
+        if j > 0 and self.has_hedge[i][j-1] and self.hcomp_type[i][j-1] == TYPE_SHORT:
+            count += 1
+        # 右边
+        if j < n-1 and self.has_hedge[i][j] and self.hcomp_type[i][j] == TYPE_SHORT:
+            count += 1
+        return count
+
+    def _is_4way_crossing(self, i, j):
+        """判断节点 (i,j) 是否是四向交叉点（有4条短路边）"""
+        return self._count_edges(i, j) == 4
+
+    def _can_turn_at(self, i, j):
+        """
+        判断在节点 (i,j) 是否可以拐弯
+        - 四向交叉点：只有有圆点（junction_marker=1）才能拐弯
+        - 其他节点（三向、两向等）：默认可以拐弯
+        """
+        if self._is_4way_crossing(i, j):
+            return self.junction_marker[i][j] == 1
+        return True  # 非四向交叉点默认可以拐弯
+
+    def _is_x_node(self, i, j):
+        """判断节点 (i,j) 是否是 x 节点（无圆点的四向交叉点）"""
+        return self._is_4way_crossing(i, j) and self.junction_marker[i][j] == 0
+
     def _get_grid_nodes(self):
         """
-        生成电路网格中的等价节点。
-        每个等价节点代表一个连通组件（组件集合），组件内节点通过短路边直接相连。
-        返回：
-        - grid_nodes: 二维数组，每个元素为等价节点编号（整数）
-        - components: 列表，每个元素为一个组件（节点列表）
-        """
-        m, n = self.m, self.n
-        visited = [[False]*n for _ in range(m)]  # 访问标记数组
-        components = []  # Store the connected components
+        使用 BFS 生成电路网格中的等价节点。
         
-        def dfs(i, j, component):
-            if i < 0 or i >= m or j < 0 or j >= n or visited[i][j]:
-                return
-            visited[i][j] = True
-            component.append((i, j))
-            
-            # Traverse vedges and hedges
-            if i > 0 and self.has_vedge[i-1][j] and self.vcomp_type[i-1][j] == TYPE_SHORT and self.vcomp_measure[i-1][j] == MEAS_TYPE_NONE: dfs(i-1, j, component)
-            if j > 0 and self.has_hedge[i][j-1] and self.hcomp_type[i][j-1] == TYPE_SHORT and self.hcomp_measure[i][j-1] == MEAS_TYPE_NONE: dfs(i, j-1, component)
-            if i < m-1 and self.has_vedge[i][j] and self.vcomp_type[i][j] == TYPE_SHORT and self.vcomp_measure[i][j] == MEAS_TYPE_NONE: dfs(i+1, j, component)
-            if j < n-1 and self.has_hedge[i][j] and self.hcomp_type[i][j] == TYPE_SHORT and self.hcomp_measure[i][j] == MEAS_TYPE_NONE: dfs(i, j+1, component)
-            
+        规则：
+        - 四向交叉点无圆点（x节点）：不能拐弯，只能直穿，标记为 x（值 -1）
+        - 四向交叉点有圆点：可以拐弯，正常节点编号
+        - 三向/两向节点：默认可以拐弯
+        - x 节点可以被多个路径穿过，属于所有经过它的等价组
+        
+        返回：
+        - grid_nodes: 二维数组，每个元素为等价节点编号（整数），x 节点为 -1
+        """
+        from collections import deque
+        
+        m, n = self.m, self.n
+        # -2 表示未访问，-1 表示 x 节点
+        grid_nodes = np.full((m, n), -2, dtype=int)
+        
+        # 预标记所有 x 节点（无圆点的四向交叉点）
+        x_nodes = set()
         for i in range(m):
             for j in range(n):
-                if not visited[i][j]: 
-                    component = []
-                    dfs(i, j, component)
+                if self._is_x_node(i, j):
+                    x_nodes.add((i, j))
+                    grid_nodes[i][j] = -1  # 标记为 x
+        
+        # 方向定义：'up', 'down', 'left', 'right'
+        # 对应移动：(-1,0), (1,0), (0,-1), (0,1)
+        directions = {
+            'up': (-1, 0),
+            'down': (1, 0),
+            'left': (0, -1),
+            'right': (0, 1)
+        }
+        opposite = {'up': 'down', 'down': 'up', 'left': 'right', 'right': 'left'}
+        
+        def has_short_edge(i, j, direction):
+            """检查从 (i,j) 往 direction 方向是否有短路边"""
+            if direction == 'up':
+                return i > 0 and self.has_vedge[i-1][j] and self.vcomp_type[i-1][j] == TYPE_SHORT
+            elif direction == 'down':
+                return i < m-1 and self.has_vedge[i][j] and self.vcomp_type[i][j] == TYPE_SHORT
+            elif direction == 'left':
+                return j > 0 and self.has_hedge[i][j-1] and self.hcomp_type[i][j-1] == TYPE_SHORT
+            elif direction == 'right':
+                return j < n-1 and self.has_hedge[i][j] and self.hcomp_type[i][j] == TYPE_SHORT
+            return False
+        
+        def get_allowed_directions(i, j, from_dir):
+            """
+            获取从 (i,j) 可以扩展的方向
+            from_dir: 进入该节点的方向（从哪个方向来的），None 表示起点
+            """
+            all_dirs = ['up', 'down', 'left', 'right']
+            
+            if from_dir is None:
+                # 起点：可以往任意有边的方向
+                return [d for d in all_dirs if has_short_edge(i, j, d)]
+            
+            if (i, j) in x_nodes:
+                # x 节点：只能继续同方向（直穿）
+                # from_dir 是"来的方向"，需要继续"去的方向"
+                # 如果从 up 来，说明从上方进入，应该继续往 down 去
+                continue_dir = opposite[from_dir]
+                if has_short_edge(i, j, continue_dir):
+                    return [continue_dir]
+                return []
+            
+            if self._can_turn_at(i, j):
+                # 可以拐弯：往任意有边的方向
+                return [d for d in all_dirs if has_short_edge(i, j, d)]
+            else:
+                # 不能拐弯（理论上不会到这里，因为 x 节点已经处理了）
+                continue_dir = opposite[from_dir]
+                if has_short_edge(i, j, continue_dir):
+                    return [continue_dir]
+                return []
+        
+        components = []
+        node_id = 0
+        
+        # BFS 遍历
+        for start_i in range(m):
+            for start_j in range(n):
+                # 跳过已访问的节点和 x 节点（x 节点不作为起点）
+                if grid_nodes[start_i][start_j] != -2:
+                    continue
+                
+                # 开始新的等价组
+                component = []
+                queue = deque()
+                queue.append((start_i, start_j, None))  # (i, j, from_direction)
+                
+                while queue:
+                    i, j, from_dir = queue.popleft()
+                    
+                    if (i, j) in x_nodes:
+                        # x 节点：加入当前等价组，但继续穿透
+                        if (i, j) not in component:
+                            component.append((i, j))
+                        # 获取可以继续的方向（只能直穿）
+                        allowed = get_allowed_directions(i, j, from_dir)
+                        for d in allowed:
+                            di, dj = directions[d]
+                            ni, nj = i + di, j + dj
+                            if 0 <= ni < m and 0 <= nj < n:
+                                # x 节点可以被多次穿过，所以不检查 visited
+                                queue.append((ni, nj, opposite[d]))
+                    else:
+                        # 普通节点
+                        if grid_nodes[i][j] != -2:
+                            continue  # 已访问
+                        
+                        grid_nodes[i][j] = node_id
+                        component.append((i, j))
+                        
+                        # 获取可以扩展的方向
+                        allowed = get_allowed_directions(i, j, from_dir)
+                        for d in allowed:
+                            di, dj = directions[d]
+                            ni, nj = i + di, j + dj
+                            if 0 <= ni < m and 0 <= nj < n:
+                                queue.append((ni, nj, opposite[d]))
+                
+                if component:
                     components.append(component)
-
+                    node_id += 1
+        
+        # x 节点最终赋值：取所属等价组中的任意一个编号（这里取第一个经过它的）
+        # 实际上 x 节点在 component 中已经记录，可以属于多个组
+        # 但 grid_nodes 只能存一个值，保持 -1 表示特殊
+        
         print(f"components: {components}")
+        print(f"x_nodes: {x_nodes}")
         self.nodes = [f"{i}" for i in range(len(components))]
-        grid_nodes = np.zeros((m, n)) # 0 by default
-        for i in range(len(components)):
-            for x, y in components[i]:
-                grid_nodes[x][y] = i
         
         return grid_nodes
     
@@ -794,8 +935,9 @@ class Circuit:
                                 return False
                         else:
                             # 节点编号（字符串），n1/n2约定方向可调换
-                            n1 = f"{int(self.grid_nodes[i][j])}"
-                            n2 = f"{int(self.grid_nodes[i][j+1])}"
+                            # x 节点（值为 -1）使用特殊节点名 "x_i_j"
+                            n1 = f"x_{i}_{j}" if self.grid_nodes[i][j] == -1 else f"{int(self.grid_nodes[i][j])}"
+                            n2 = f"x_{i}_{j+1}" if self.grid_nodes[i][j+1] == -1 else f"{int(self.grid_nodes[i][j+1])}"
                             if self.hcomp_direction[i][j]:
                                 n1, n2 = n2, n1
                             # 构造支路信息
@@ -837,8 +979,9 @@ class Circuit:
                                 self.valid = False
                                 return False
                         else:   # 不等价节点的边
-                            n1 = f"{int(self.grid_nodes[i][j])}"
-                            n2 = f"{int(self.grid_nodes[i+1][j])}"
+                            # x 节点（值为 -1）使用特殊节点名 "x_i_j"
+                            n1 = f"x_{i}_{j}" if self.grid_nodes[i][j] == -1 else f"{int(self.grid_nodes[i][j])}"
+                            n2 = f"x_{i+1}_{j}" if self.grid_nodes[i+1][j] == -1 else f"{int(self.grid_nodes[i+1][j])}"
                             if self.vcomp_direction[i][j]:
                                 n1, n2 = n2, n1
                             new_branch = {
@@ -879,15 +1022,16 @@ class Circuit:
                             if 'base' in connections:
                                 bi, bj = self._coord_to_grid(*connections['base'])
                                 if bi is not None:
-                                    base_node = f"{int(self.grid_nodes[bi][bj])}"
+                                    # x 节点使用特殊节点名
+                                    base_node = f"x_{bi}_{bj}" if self.grid_nodes[bi][bj] == -1 else f"{int(self.grid_nodes[bi][bj])}"
                             if 'collector' in connections:
                                 ci, cj = self._coord_to_grid(*connections['collector'])
                                 if ci is not None:
-                                    collector_node = f"{int(self.grid_nodes[ci][cj])}"
+                                    collector_node = f"x_{ci}_{cj}" if self.grid_nodes[ci][cj] == -1 else f"{int(self.grid_nodes[ci][cj])}"
                             if 'emitter' in connections:
                                 ei, ej = self._coord_to_grid(*connections['emitter'])
                                 if ei is not None:
-                                    emitter_node = f"{int(self.grid_nodes[ei][ej])}"
+                                    emitter_node = f"x_{ei}_{ej}" if self.grid_nodes[ei][ej] == -1 else f"{int(self.grid_nodes[ei][ej])}"
                         
                         new_branch = {
                             "type": node_type,
@@ -1033,6 +1177,9 @@ class Circuit:
         elif int(self.note[1:]) > 9:
             zero_order = True
             for br in self.branches:
+                # 跳过节点元件（三极管等）
+                if br.get('is_node_component', False):
+                    continue
                 if br["type"] in [TYPE_CAPACITOR, TYPE_INDUCTOR]:
                     zero_order = False
                     break
@@ -1040,6 +1187,10 @@ class Circuit:
             if zero_order:      # 零阶电路
                 sim_str = ".control\nop\n"
                 for br in self.branches:
+                    # 跳过节点元件（三极管等），它们没有 measure_label 等字段
+                    if br.get('is_node_component', False):
+                        continue
+                    
                     if br["measure_label"] == -1:
                         ms_label_str = ""
                     else:
@@ -1165,6 +1316,16 @@ class Circuit:
         else:
             return ""
 
+    def _draw_junction(self, i, j):
+        """绘制交叉点（实心圆点，表示导线连接处）"""
+        if ((i>=0 and i<self.m) and (j>=0 and j<self.n)) and self.junction_marker[i][j] == 1:
+            x = self.horizontal_dis[j]
+            y = self.vertical_dis[i]
+            # 使用circuitikz的circ节点绘制实心圆点
+            return f"\\node[circ] at ({x:.1f},{y:.1f}) {{}};\n"
+        else:
+            return ""
+
     def to_latex(self):
         # with open("./templates/latex_template.txt", "r") as f:
         #     latex_template = f.read()
@@ -1186,6 +1347,11 @@ class Circuit:
         for i in range(self.m):
             for j in range(self.n):
                 latex_code_main += self._draw_node_component(i,j)
+        
+        # 最后绘制交叉点（实心圆点，确保在最顶层）
+        for i in range(self.m):
+            for j in range(self.n):
+                latex_code_main += self._draw_junction(i,j)
         
         latex_code = latex_template.replace("<main>", latex_code_main)
         

@@ -17,19 +17,19 @@
     [
       0,
       0,
-      0,
+      1,
       1
     ],
     [
       1,
       0,
-      0,
+      1,
       1
     ],
     [
       1,
       1,
-      0,
+      1,
       1
     ]
   ],
@@ -46,8 +46,8 @@
     ],
     [
       0,
-      0,
-      0
+      1,
+      1
     ],
     [
       1,
@@ -65,7 +65,7 @@
     [
       3,
       0,
-      0,
+      3,
       3
     ],
     [
@@ -89,7 +89,7 @@
     [
       0,
       0,
-      0
+      3
     ],
     [
       0,
@@ -107,13 +107,13 @@
     [
       2,
       0,
-      0,
+      6,
       4
     ],
     [
       1,
       5,
-      3,
+      0,
       0
     ]
   ],
@@ -131,7 +131,7 @@
     [
       0,
       0,
-      0
+      1
     ],
     [
       0,
@@ -149,13 +149,13 @@
     [
       10,
       0,
-      0,
+      16,
       18
     ],
     [
       12,
       50,
-      0,
+      17,
       0
     ]
   ],
@@ -173,7 +173,7 @@
     [
       0,
       0,
-      0
+      19
     ],
     [
       0,
@@ -191,7 +191,7 @@
     [
       1,
       0,
-      0,
+      1,
       1
     ],
     [
@@ -214,7 +214,7 @@
     ],
     [
       0,
-      0,
+      1,
       0
     ],
     [
@@ -550,10 +550,36 @@
       null
     ]
   ],
+  "junction_marker": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      0,
+      1
+    ]
+  ],
   "branches": [
     {
       "n1": "2",
-      "n2": "5",
+      "n2": "4",
       "type": 3,
       "label": 2,
       "value": 10,
@@ -567,10 +593,10 @@
     },
     {
       "n1": "1",
-      "n2": "8",
+      "n2": "5",
       "type": 3,
-      "label": 4,
-      "value": 18,
+      "label": 6,
+      "value": 16,
       "value_unit": 1,
       "measure": 0,
       "measure_label": 0,
@@ -580,8 +606,22 @@
       "order": 1
     },
     {
-      "n1": "5",
-      "n2": "8",
+      "n1": "1",
+      "n2": "6",
+      "type": 3,
+      "label": 4,
+      "value": 18,
+      "value_unit": 1,
+      "measure": 0,
+      "measure_label": 0,
+      "meas_comp_same_direction": true,
+      "control_measure_label": 0,
+      "info": "",
+      "order": 2
+    },
+    {
+      "n1": "4",
+      "n2": "6",
       "type": 1,
       "label": 1,
       "value": 12,
@@ -591,11 +631,11 @@
       "meas_comp_same_direction": true,
       "control_measure_label": 0,
       "info": "",
-      "order": 2
+      "order": 3
     },
     {
-      "n1": "6",
-      "n2": "8",
+      "n1": "5",
+      "n2": "6",
       "type": 3,
       "label": 5,
       "value": 50,
@@ -605,17 +645,45 @@
       "meas_comp_same_direction": true,
       "control_measure_label": 0,
       "info": "",
-      "order": 3
+      "order": 4
+    },
+    {
+      "n1": "5",
+      "n2": "6",
+      "type": 3,
+      "label": 1,
+      "value": 19,
+      "value_unit": 0,
+      "measure": 0,
+      "measure_label": 0,
+      "meas_comp_same_direction": true,
+      "control_measure_label": 0,
+      "info": "",
+      "order": 5
+    },
+    {
+      "n1": "5",
+      "n2": "6",
+      "type": 3,
+      "label": 0,
+      "value": 17,
+      "value_unit": 0,
+      "measure": 0,
+      "measure_label": 0,
+      "meas_comp_same_direction": true,
+      "control_measure_label": 0,
+      "info": "",
+      "order": 6
     },
     {
       "type": 1,
       "label": 1,
       "base_node": "2",
-      "collector_node": "6",
+      "collector_node": "5",
       "emitter_node": "1",
       "orientation": 3,
       "is_node_component": true,
-      "order": 4
+      "order": 7
     }
   ]
 }

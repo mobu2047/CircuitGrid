@@ -63,16 +63,16 @@ def generate_transistor_amplifier_example():
     # has_vedge 形状 (m-1, n)，即 (3,4)
     # 每个元素 1 表示该位置有垂直边，0表示无
     has_vedge = np.array([
-        [0, 0, 0, 1],  # (0,0)-(1,0): 有（Vcc），(0,1)-(1,1): 有（但此例可选填0/1，看拓扑设计）
-        [1, 0, 0, 1],  # (1,0)-(2,0): 有（Vin-GND），(1,1)-(2,1): 可选
-        [1, 1, 0, 1]   # (2,*)-(3,*): 暂无垂直边，全部0（最底行）
+        [0, 0, 1, 1],  # (0,0)-(1,0): 有（Vcc），(0,1)-(1,1): 有（但此例可选填0/1，看拓扑设计）
+        [1, 0, 1, 1],  # (1,0)-(2,0): 有（Vin-GND），(1,1)-(2,1): 可选
+        [1, 1, 1, 1]   # (2,*)-(3,*): 暂无垂直边，全部0（最底行）
     ])
     # has_hedge 形状 (m, n-1)，即 (4,3)
     # 每一行对应一行Grid，每一列是该行的三个水平边：“1”表示有一条水平边，“0”表示无
     has_hedge = np.array([
         [0, 1, 1],  # (0,0)-(0,1): Rc，(0,1)-(0,2),(0,2)-(0,3): 无
         [0, 0, 0],  # (1,0)-(1,1): Rb，其余无
-        [0, 0, 0],  # (2,0)-(2,1): 发射极与GND短路
+        [0, 1, 1],  # (2,0)-(2,1): 发射极与GND短路
         [1, 1, 1]  # (3,*) 行无水平边
     ])
     
@@ -86,7 +86,7 @@ def generate_transistor_amplifier_example():
     # 4x4 网络，垂直元件和水平元件类型均补全为适合4*4网格
     vcomp_type = np.array([
         [0, 0, 0, 0],  # (0,0)-(1,0)：Vcc电压源，其它无
-        [TYPE_RESISTOR, 0, 0, TYPE_RESISTOR],                    # (1,*)-(2,*)
+        [TYPE_RESISTOR, 0, TYPE_RESISTOR, TYPE_RESISTOR],                    # (1,*)-(2,*)
         [TYPE_VOLTAGE_SOURCE, TYPE_RESISTOR, TYPE_RESISTOR, 0],                    # (2,*)-(3,*)
     ])
 
@@ -94,44 +94,44 @@ def generate_transistor_amplifier_example():
     hcomp_type = np.array([
         [0, 0, 0],     # (0,0)-(0,1)：Rc，其它无
         [0, 0, 0],     # (1,0)-(1,1)：Rb
-        [0, 0, 0],     # (2,0)-(2,1)：发射极与GND短路
+        [0, 0, TYPE_RESISTOR],     # (2,0)-(2,1)：发射极与GND短路
         [0, 0, 0]      # (3,*) 行如无水平边则填0，4*3矩阵
     ])
 
     # 垂直边元件标签数组（形状与vcomp_type一致，全部补全0）
     vcomp_label = np.array([
         [0, 0, 0, 0],   # Vcc编号为1，其它元件无编号
-        [2, 0, 0, 4],   # Vin编号为2，其它无
-        [1, 5, 3, 0],   # 其它全无编号
+        [2, 0, 6, 4],   # Vin编号为2，其它无
+        [1, 5, 0, 0],   # 其它全无编号
     ])
 
     # 水平边元件标签数组（形状与hcomp_type一致，全部补全0）
     hcomp_label = np.array([
         [0, 0, 0],   # Rc编号为1，其它无
         [0, 0, 0],   # Rb编号为2，其它无
-        [0, 0, 0],   # 发射极短路无编号
+        [0, 0, 1],   # 发射极短路无编号
         [0, 0, 0]    # 其余全无编号
     ])
 
     # 垂直边元件数值数组（同理补足0，每个为标量数值）
     vcomp_value = np.array([
         [0,   0, 0, 0],   # Vcc=12V
-        [10,    0, 0, 18],   # Vin=5V
-        [12,    50, 0, 0],   # 其它为0
+        [10,    0, 16, 18],   # Vin=5V
+        [12,    50, 17, 0],   # 其它为0
     ])
 
     # 水平边元件数值数组（同理补足0）
     hcomp_value = np.array([
         [0,   0, 0],    # Rc=1k
         [0,  0, 0],    # Rb=10k
-        [0,   0, 0],    # 发射极短路
+        [0,   0, 19],    # 发射极短路
         [0,   0, 0],    # 其余为0
     ])
 
     # 垂直边元件单位模式（同理补足0）
     vcomp_value_unit = np.array([
         [0, 0, 0, 0],    # Vcc为V
-        [UNIT_MODE_k, 0, 0, UNIT_MODE_k],    # Vin为V
+        [UNIT_MODE_k, 0, UNIT_MODE_k, UNIT_MODE_k],    # Vin为V
         [UNIT_MODE_1,UNIT_MODE_k, 0, 0],     # 其它无单位
     ])
 
@@ -139,7 +139,7 @@ def generate_transistor_amplifier_example():
     hcomp_value_unit = np.array([
         [0, 0, 0],   # Rc用kΩ
         [0, 0, 0],   # Rb用kΩ
-        [0,          0, 0],    # 发射极短路无单位
+        [0,          UNIT_MODE_k, 0],    # 发射极短路无单位
         [0,          0, 0],    # 其余为0
     ])
 
@@ -185,6 +185,15 @@ def generate_transistor_amplifier_example():
         'emitter': (horizontal_dis[1], vertical_dis[0])     # (5.0, 0.0)
     }
     
+    # ========== 交叉点标记（实心圆点） ==========
+    # junction_marker: (m, n) 1=显示实心圆点（导线连接处），0=不显示
+    # 在导线交汇处设置为1，表示这些点是电气连接点
+    junction_marker = np.zeros((m, n), dtype=int)
+    # 设置需要显示实心圆点的位置（例如：三路以上导线交汇处）
+    junction_marker[3][1] = 1  # 右上角Vcc与Rc交汇
+    junction_marker[3][0] = 1  # 左下角GND交汇
+    junction_marker[3][3] = 1  # 右下角GND交汇
+    
     # 创建Circuit对象
     circuit = Circuit(
         m=m, n=n,
@@ -214,6 +223,7 @@ def generate_transistor_amplifier_example():
         node_comp_label=node_comp_label,
         node_comp_orientation=node_comp_orientation,
         node_comp_connections=node_comp_connections,
+        junction_marker=junction_marker,
         use_value_annotation=True,
         note="v11",
         id="transistor_example_1"
@@ -264,7 +274,8 @@ def generate_transistor_amplifier_example():
             'vcomp_measure_direction', 'hcomp_measure_direction',
             'vcomp_control_meas_label', 'hcomp_control_meas_label',
             'node_comp_type', 'node_comp_label', 'node_comp_orientation',
-            'node_comp_connections'
+            'node_comp_connections',
+            'junction_marker'  # 交叉点标记
         ]
         # 保持纵向排列（不再做转置）
         result = {}

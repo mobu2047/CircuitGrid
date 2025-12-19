@@ -17,19 +17,19 @@
     [
       0,
       0,
-      1,
+      0,
       1
     ],
     [
       1,
       0,
-      1,
+      0,
       1
     ],
     [
       1,
       1,
-      1,
+      0,
       1
     ]
   ],
@@ -154,8 +154,8 @@
     ],
     [
       12,
-      12,
       50,
+      0,
       0
     ]
   ],
@@ -197,7 +197,7 @@
     [
       0,
       1,
-      1,
+      0,
       0
     ]
   ],
@@ -523,7 +523,7 @@
       {
         "collector": [
           6.0,
-          9.0
+          3.0
         ],
         "base": [
           9.0,
@@ -531,7 +531,7 @@
         ],
         "emitter": [
           6.0,
-          0.0
+          9.0
         ]
       },
       null,
@@ -550,10 +550,36 @@
       null
     ]
   ],
+  "junction_marker": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      0,
+      1
+    ]
+  ],
   "branches": [
     {
       "n1": "2",
-      "n2": "4",
+      "n2": "5",
       "type": 3,
       "label": 2,
       "value": 10,
@@ -567,7 +593,7 @@
     },
     {
       "n1": "1",
-      "n2": "6",
+      "n2": "8",
       "type": 3,
       "label": 4,
       "value": 18,
@@ -580,8 +606,8 @@
       "order": 1
     },
     {
-      "n1": "4",
-      "n2": "6",
+      "n1": "5",
+      "n2": "8",
       "type": 1,
       "label": 1,
       "value": 12,
@@ -594,11 +620,11 @@
       "order": 2
     },
     {
-      "n1": "5",
-      "n2": "6",
+      "n1": "6",
+      "n2": "8",
       "type": 3,
       "label": 5,
-      "value": 12,
+      "value": 50,
       "value_unit": 1,
       "measure": 0,
       "measure_label": 0,
@@ -608,28 +634,14 @@
       "order": 3
     },
     {
-      "n1": "1",
-      "n2": "6",
-      "type": 3,
-      "label": 3,
-      "value": 50,
-      "value_unit": 1,
-      "measure": 0,
-      "measure_label": 0,
-      "meas_comp_same_direction": true,
-      "control_measure_label": 0,
-      "info": "",
-      "order": 4
-    },
-    {
       "type": 1,
       "label": 1,
       "base_node": "2",
-      "collector_node": "1",
-      "emitter_node": "6",
+      "collector_node": "6",
+      "emitter_node": "1",
       "orientation": 3,
       "is_node_component": true,
-      "order": 5
+      "order": 4
     }
   ]
 }
