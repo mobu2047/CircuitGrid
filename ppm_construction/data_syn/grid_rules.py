@@ -1033,31 +1033,23 @@ class Circuit:
         elif int(self.note[1:]) > 9:
             zero_order = True
             for br in self.branches:
-                # 跳过节点元件，只检查边上元件的类型
-                if br.get('is_node_component', False):
-                    continue
-                if br.get("type") in [TYPE_CAPACITOR, TYPE_INDUCTOR]:
+                if br["type"] in [TYPE_CAPACITOR, TYPE_INDUCTOR]:
                     zero_order = False
                     break
 
             if zero_order:      # 零阶电路
                 sim_str = ".control\nop\n"
                 for br in self.branches:
-                    # 跳过节点元件（三极管等），它们没有 measure_label 等字段
-                    if br.get('is_node_component', False):
-                        continue
-                    
-                    if br.get("measure_label", -1) == -1:
+                    if br["measure_label"] == -1:
                         ms_label_str = ""
                     else:
                         ms_label_str = str(int(br["measure_label"]))
 
-                    measure_type = br.get("measure", MEAS_TYPE_NONE)
-                    if measure_type == MEAS_TYPE_VOLTAGE:
+                    if br["measure"] == MEAS_TYPE_VOLTAGE:
                         print(f"#n1: {br['n1']}, n2: {br['n2']}")
                         # sim_str += f".PRINT DC V({br['n1']}, {br['n2']}) * measurement of U{br['measure_label']}\n"
                         meas_n1, meas_n2 = br["n1"], br["n2"]
-                        if not br.get("meas_comp_same_direction", True):
+                        if not br["meas_comp_same_direction"]:
                             meas_n1, meas_n2 = meas_n2, meas_n1
                         if str(meas_n1) == '0':
                             sim_str += "print -v(%s) ; measurement of U%s\n" % (meas_n2, ms_label_str)
@@ -1065,7 +1057,7 @@ class Circuit:
                             sim_str += "print v(%s) ; measurement of U%s\n" % (meas_n1, ms_label_str)
                         else:
                             sim_str += "print v(%s, %s) ; measurement of U%s\n" % (meas_n1, meas_n2, ms_label_str)
-                    elif measure_type == MEAS_TYPE_CURRENT:
+                    elif br["measure"] == MEAS_TYPE_CURRENT:
                         print('#')
                         # sim_str += f".PRINT DC V({br['n1']}, {br['n2']}) / (R{br['label']}) * measurement of I{br['measure_label']} : I(R{br['label']})\n"
                         vmeas_str = f"VI{ms_label_str}"

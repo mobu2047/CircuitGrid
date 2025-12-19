@@ -63,14 +63,14 @@ def generate_transistor_amplifier_example():
     # has_vedge 形状 (m-1, n)，即 (3,4)
     # 每个元素 1 表示该位置有垂直边，0表示无
     has_vedge = np.array([
-        [1, 0, 1, 1],  # (0,0)-(1,0): 有（Vcc），(0,1)-(1,1): 有（但此例可选填0/1，看拓扑设计）
-        [1, 0, 1, 1],  # (1,0)-(2,0): 有（Vin-GND），(1,1)-(2,1): 可选
-        [1, 0, 1, 1]   # (2,*)-(3,*): 暂无垂直边，全部0（最底行）
+        [0, 0, 0, 1],  # (0,0)-(1,0): 有（Vcc），(0,1)-(1,1): 有（但此例可选填0/1，看拓扑设计）
+        [1, 0, 0, 1],  # (1,0)-(2,0): 有（Vin-GND），(1,1)-(2,1): 可选
+        [1, 1, 0, 1]   # (2,*)-(3,*): 暂无垂直边，全部0（最底行）
     ])
     # has_hedge 形状 (m, n-1)，即 (4,3)
     # 每一行对应一行Grid，每一列是该行的三个水平边：“1”表示有一条水平边，“0”表示无
     has_hedge = np.array([
-        [1, 1, 1],  # (0,0)-(0,1): Rc，(0,1)-(0,2),(0,2)-(0,3): 无
+        [0, 1, 1],  # (0,0)-(0,1): Rc，(0,1)-(0,2),(0,2)-(0,3): 无
         [0, 0, 0],  # (1,0)-(1,1): Rb，其余无
         [0, 0, 0],  # (2,0)-(2,1): 发射极与GND短路
         [1, 1, 1]  # (3,*) 行无水平边
@@ -87,7 +87,7 @@ def generate_transistor_amplifier_example():
     vcomp_type = np.array([
         [0, 0, 0, 0],  # (0,0)-(1,0)：Vcc电压源，其它无
         [TYPE_RESISTOR, 0, 0, TYPE_RESISTOR],                    # (1,*)-(2,*)
-        [TYPE_VOLTAGE_SOURCE, 0, TYPE_RESISTOR, 0],                    # (2,*)-(3,*)
+        [TYPE_VOLTAGE_SOURCE, TYPE_RESISTOR, TYPE_RESISTOR, 0],                    # (2,*)-(3,*)
     ])
 
     # 修改为 4x4 网格的 hcomp_type（行数为 m=4，列数为 n-1=3）
@@ -102,7 +102,7 @@ def generate_transistor_amplifier_example():
     vcomp_label = np.array([
         [0, 0, 0, 0],   # Vcc编号为1，其它元件无编号
         [2, 0, 0, 4],   # Vin编号为2，其它无
-        [1, 0, 3, 0],   # 其它全无编号
+        [1, 5, 3, 0],   # 其它全无编号
     ])
 
     # 水平边元件标签数组（形状与hcomp_type一致，全部补全0）
@@ -117,7 +117,7 @@ def generate_transistor_amplifier_example():
     vcomp_value = np.array([
         [0,   0, 0, 0],   # Vcc=12V
         [10,    0, 0, 18],   # Vin=5V
-        [12,    0, 50, 0],   # 其它为0
+        [12,    50, 0, 0],   # 其它为0
     ])
 
     # 水平边元件数值数组（同理补足0）
@@ -132,7 +132,7 @@ def generate_transistor_amplifier_example():
     vcomp_value_unit = np.array([
         [0, 0, 0, 0],    # Vcc为V
         [UNIT_MODE_k, 0, 0, UNIT_MODE_k],    # Vin为V
-        [UNIT_MODE_1,0, UNIT_MODE_k, 0],     # 其它无单位
+        [UNIT_MODE_1,UNIT_MODE_k, 0, 0],     # 其它无单位
     ])
 
     # 水平边元件单位模式（同理补足0）
@@ -168,6 +168,7 @@ def generate_transistor_amplifier_example():
     node_comp_label[1][1] = 1  # Q1
     
     node_comp_orientation = np.ones((m, n), dtype=int)
+    node_comp_orientation[1][1] = 3
     
     node_comp_connections = np.empty((m, n), dtype=object)
     for i in range(m):
@@ -179,9 +180,9 @@ def generate_transistor_amplifier_example():
     # - Base -> (1,1): Rb输出端 (5.0, 3.0)
     # - Emitter -> (2,1): GND (5.0, 0.0)
     node_comp_connections[1][1] = {
-        'collector': (horizontal_dis[1], vertical_dis[0]),  # (5.0, 6.0)
-        'base': (horizontal_dis[2], vertical_dis[1]),       # (5.0, 3.0)
-        'emitter': (horizontal_dis[1], vertical_dis[3])     # (5.0, 0.0)
+        'collector': (horizontal_dis[1], vertical_dis[2]),  # (5.0, 6.0)
+        'base': (horizontal_dis[0], vertical_dis[1]),       # (5.0, 3.0)
+        'emitter': (horizontal_dis[1], vertical_dis[0])     # (5.0, 0.0)
     }
     
     # 创建Circuit对象
@@ -231,7 +232,7 @@ def generate_transistor_amplifier_example():
                               np.int16, np.int32, np.int64, np.uint8, np.uint16,
                               np.uint32, np.uint64)):
             return int(obj)
-        elif isinstance(obj, (np.floating, np.float_, np.float16, np.float32, np.float64)):
+        elif isinstance(obj, (np.floating, np.float16, np.float32, np.float64)):
             return float(obj)
         elif isinstance(obj, (np.ndarray,)):
             # 只toList，不再转置，保持纵向（按行主序）
@@ -381,6 +382,7 @@ if __name__ == "__main__":
         
         # 生成LaTeX代码
         latex_code = circuit.to_latex()
+        spice_code = circuit._to_SPICE()
         
         # 保存到文件
         output_file = "transistor_example.tex"
