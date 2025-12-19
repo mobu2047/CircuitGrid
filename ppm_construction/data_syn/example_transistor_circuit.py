@@ -132,14 +132,14 @@ def generate_transistor_amplifier_example():
     vcomp_value_unit = np.array([
         [0, 0, 0, 0],    # Vcc为V
         [UNIT_MODE_k, 0, UNIT_MODE_k, UNIT_MODE_k],    # Vin为V
-        [UNIT_MODE_1,UNIT_MODE_k, 0, 0],     # 其它无单位
+        [UNIT_MODE_1,UNIT_MODE_k, UNIT_MODE_k, 0],     # 其它无单位
     ])
 
     # 水平边元件单位模式（同理补足0）
     hcomp_value_unit = np.array([
         [0, 0, 0],   # Rc用kΩ
         [0, 0, 0],   # Rb用kΩ
-        [0,          UNIT_MODE_k, 0],    # 发射极短路无单位
+        [0,          0, UNIT_MODE_k],    # 发射极短路无单位
         [0,          0, 0],    # 其余为0
     ])
 
