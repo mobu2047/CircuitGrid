@@ -696,16 +696,16 @@ class Circuit:
         m, n = self.m, self.n
         count = 0
         # 上边
-        if i > 0 and self.has_vedge[i-1][j] and self.vcomp_type[i-1][j] == TYPE_SHORT:
+        if i > 0 and self.has_vedge[i-1][j] :
             count += 1
         # 下边
-        if i < m-1 and self.has_vedge[i][j] and self.vcomp_type[i][j] == TYPE_SHORT:
+        if i < m-1 and self.has_vedge[i][j] :
             count += 1
         # 左边
-        if j > 0 and self.has_hedge[i][j-1] and self.hcomp_type[i][j-1] == TYPE_SHORT:
+        if j > 0 and self.has_hedge[i][j-1] :
             count += 1
         # 右边
-        if j < n-1 and self.has_hedge[i][j] and self.hcomp_type[i][j] == TYPE_SHORT:
+        if j < n-1 and self.has_hedge[i][j] :
             count += 1
         return count
 
@@ -735,10 +735,14 @@ class Circuit:
         - 四向交叉点无圆点（x节点）：不能拐弯，只能直穿，标记为 x（值 -1）
         - 四向交叉点有圆点：可以拐弯，正常节点编号
         - 三向/两向节点：默认可以拐弯
-        - x 节点可以被多个路径穿过，属于所有经过它的等价组
+        - x 节点在水平/垂直方向上分别属于不同的等价组
         
         返回：
         - grid_nodes: 二维数组，每个元素为等价节点编号（整数），x 节点为 -1
+        
+        副作用：
+        - self.x_node_groups: 记录每个 x 节点在水平/垂直方向上属于哪个等价组
+          格式: {(i,j): {'horizontal': group_id, 'vertical': group_id}}
         """
         from collections import deque
         
@@ -753,6 +757,9 @@ class Circuit:
                 if self._is_x_node(i, j):
                     x_nodes.add((i, j))
                     grid_nodes[i][j] = -1  # 标记为 x
+        
+        # 记录 x 节点在各方向上的等价组号
+        self.x_node_groups = {pos: {} for pos in x_nodes}
         
         # 方向定义：'up', 'down', 'left', 'right'
         # 对应移动：(-1,0), (1,0), (0,-1), (0,1)
@@ -825,9 +832,19 @@ class Circuit:
                     i, j, from_dir = queue.popleft()
                     
                     if (i, j) in x_nodes:
-                        # x 节点：加入当前等价组，但继续穿透
+                        # x 节点：记录该方向属于当前等价组，然后继续穿透
                         if (i, j) not in component:
                             component.append((i, j))
+                        
+                        # 根据来向确定方向类型（水平/垂直）
+                        if from_dir in ['left', 'right']:
+                            dir_type = 'horizontal'
+                        else:  # 'up', 'down'
+                            dir_type = 'vertical'
+                        
+                        # 记录 x 节点在该方向上属于当前等价组
+                        self.x_node_groups[(i, j)][dir_type] = node_id
+                        
                         # 获取可以继续的方向（只能直穿）
                         allowed = get_allowed_directions(i, j, from_dir)
                         for d in allowed:
@@ -862,7 +879,27 @@ class Circuit:
         
         print(f"components: {components}")
         print(f"x_nodes: {x_nodes}")
-        self.nodes = [f"{i}" for i in range(len(components))]
+        
+        # 为 x 节点未记录的方向分配新的独立节点号
+        # 检查 x 节点在各方向是否有边（元件边也算）
+        for (xi, xj) in x_nodes:
+            # 检查水平方向是否有边
+            has_h_edge = (xj > 0 and self.has_hedge[xi][xj-1]) or (xj < n-1 and self.has_hedge[xi][xj])
+            # 检查垂直方向是否有边
+            has_v_edge = (xi > 0 and self.has_vedge[xi-1][xj]) or (xi < m-1 and self.has_vedge[xi][xj])
+            
+            # 如果有水平边但没有记录水平方向，分配新节点号
+            if has_h_edge and 'horizontal' not in self.x_node_groups[(xi, xj)]:
+                self.x_node_groups[(xi, xj)]['horizontal'] = node_id
+                node_id += 1
+            
+            # 如果有垂直边但没有记录垂直方向，分配新节点号
+            if has_v_edge and 'vertical' not in self.x_node_groups[(xi, xj)]:
+                self.x_node_groups[(xi, xj)]['vertical'] = node_id
+                node_id += 1
+        
+        print(f"x_node_groups: {self.x_node_groups}")
+        self.nodes = [f"{i}" for i in range(node_id)]
         
         return grid_nodes
     
@@ -885,6 +922,24 @@ class Circuit:
     def init_netlist(self):
         return self._init_netlist()
 
+    def _get_node_name(self, i, j, direction):
+        """
+        获取格点 (i, j) 在指定方向上的节点名称。
+        
+        Args:
+            i, j: 格点坐标
+            direction: 'horizontal' 或 'vertical'，表示边的方向
+            
+        Returns:
+            节点名称字符串
+        """
+        if self.grid_nodes[i][j] == -1:
+            # x 节点：根据方向查找对应的等价组号
+            # 所有 x 节点的方向都应该已经在 _get_grid_nodes 中被分配了节点号
+            return f"{self.x_node_groups[(i, j)][direction]}"
+        else:
+            return f"{int(self.grid_nodes[i][j])}"
+    
     def _init_netlist(self):
         """
         初始化电路网表（netlist）。
@@ -927,17 +982,18 @@ class Circuit:
                         print(f"({i}, {j}) has hedge")
                         # 检查不可出现的断路
                         assert self.hcomp_type[i][j] != TYPE_OPEN, f"open circuit should not be in the netlist, {self.hcomp_type[i][j]}"
+                        # 获取实际节点名（考虑 x 节点的方向）
+                        n1 = self._get_node_name(i, j, 'horizontal')
+                        n2 = self._get_node_name(i, j+1, 'horizontal')
                         # 若两侧节点等价且该横向不是短路，则电路非法（组件被短路）
-                        if self.grid_nodes[i][j] == self.grid_nodes[i][j+1]:
+                        if n1 == n2:
                             if self.hcomp_type[i][j] != TYPE_SHORT:
                                 print("invalid circuit, some components are shorted")
                                 self.valid = False
                                 return False
+                            # 短路边连接同一节点，跳过不添加
+                            continue
                         else:
-                            # 节点编号（字符串），n1/n2约定方向可调换
-                            # x 节点（值为 -1）使用特殊节点名 "x_i_j"
-                            n1 = f"x_{i}_{j}" if self.grid_nodes[i][j] == -1 else f"{int(self.grid_nodes[i][j])}"
-                            n2 = f"x_{i}_{j+1}" if self.grid_nodes[i][j+1] == -1 else f"{int(self.grid_nodes[i][j+1])}"
                             if self.hcomp_direction[i][j]:
                                 n1, n2 = n2, n1
                             # 构造支路信息
@@ -972,16 +1028,18 @@ class Circuit:
                     # 处理纵向支路
                     if i < self.m-1 and self.has_vedge[i][j]:
                         print(f"({i}, {j}) has vedge")
+                        # 获取实际节点名（考虑 x 节点的方向）
+                        n1 = self._get_node_name(i, j, 'vertical')
+                        n2 = self._get_node_name(i+1, j, 'vertical')
                         # 若上下节点等价且该纵向不是短路，则电路非法
-                        if self.grid_nodes[i][j] == self.grid_nodes[i+1][j]:
+                        if n1 == n2:
                             if self.vcomp_type[i][j] != TYPE_SHORT:
                                 print("invalid circuit, some components are shorted")
                                 self.valid = False
                                 return False
+                            # 短路边连接同一节点，跳过不添加
+                            continue
                         else:   # 不等价节点的边
-                            # x 节点（值为 -1）使用特殊节点名 "x_i_j"
-                            n1 = f"x_{i}_{j}" if self.grid_nodes[i][j] == -1 else f"{int(self.grid_nodes[i][j])}"
-                            n2 = f"x_{i+1}_{j}" if self.grid_nodes[i+1][j] == -1 else f"{int(self.grid_nodes[i+1][j])}"
                             if self.vcomp_direction[i][j]:
                                 n1, n2 = n2, n1
                             new_branch = {
@@ -1018,20 +1076,27 @@ class Circuit:
                         # 三极管支路：获取各引脚连接的等价节点
                         base_node, collector_node, emitter_node = None, None, None
                         
+                        # 根据三极管朝向确定引脚连接方向
+                        # orientation: 0=up, 1=right, 2=down, 3=left（base 指向的方向）
+                        orientation = self.node_comp_orientation[i][j]
+                        # base 方向：0/2 为垂直，1/3 为水平
+                        # collector/emitter 方向与 base 垂直
+                        base_dir = 'vertical' if orientation in [0, 2] else 'horizontal'
+                        ce_dir = 'horizontal' if orientation in [0, 2] else 'vertical'
+                        
                         if connections:
                             if 'base' in connections:
                                 bi, bj = self._coord_to_grid(*connections['base'])
                                 if bi is not None:
-                                    # x 节点使用特殊节点名
-                                    base_node = f"x_{bi}_{bj}" if self.grid_nodes[bi][bj] == -1 else f"{int(self.grid_nodes[bi][bj])}"
+                                    base_node = self._get_node_name(bi, bj, base_dir)
                             if 'collector' in connections:
                                 ci, cj = self._coord_to_grid(*connections['collector'])
                                 if ci is not None:
-                                    collector_node = f"x_{ci}_{cj}" if self.grid_nodes[ci][cj] == -1 else f"{int(self.grid_nodes[ci][cj])}"
+                                    collector_node = self._get_node_name(ci, cj, ce_dir)
                             if 'emitter' in connections:
                                 ei, ej = self._coord_to_grid(*connections['emitter'])
                                 if ei is not None:
-                                    emitter_node = f"x_{ei}_{ej}" if self.grid_nodes[ei][ej] == -1 else f"{int(self.grid_nodes[ei][ej])}"
+                                    emitter_node = self._get_node_name(ei, ej, ce_dir)
                         
                         new_branch = {
                             "type": node_type,
@@ -1125,7 +1190,10 @@ class Circuit:
                 type_str = SPICE_PREFFIX[br['type']]
 
                 if br["type"] == TYPE_SHORT:
-                    assert br["measure"] == MEAS_TYPE_CURRENT, f"short circuit should be measured by current, {br}"
+                    # 短路边：只有当有电流测量时才生成 SPICE 元件
+                    # 对于连接到 x 节点的短路边（没有电流测量），跳过
+                    if br["measure"] != MEAS_TYPE_CURRENT:
+                        continue  # 跳过没有电流测量的短路边
                     vmeas_str = f"VI{ms_label_str}"
                     spice_str += "%s %s %s %s\n" % (vmeas_str, br["n1"], br["n2"], 0)
                 
