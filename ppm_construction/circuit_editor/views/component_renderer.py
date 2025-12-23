@@ -401,9 +401,6 @@ def draw_npn(canvas, x, y, orientation, color, scale, label, cell_size=80):
     canvas.create_line(ex2, ey2, ex3, ey3, fill=color, width=2*scale)
     
     # 箭头（在发射极上，指向外）
-    arrow_len = 8 * scale
-    ax, ay = ex2
-    # 箭头指向 ex3 方向
     canvas.create_line(ex1, ey1, ex2, ey2, fill=color, width=2*scale, arrow=tk.LAST, arrowshape=(8, 10, 4))
     
     # 标签
