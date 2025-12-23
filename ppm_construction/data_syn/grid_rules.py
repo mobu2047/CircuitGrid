@@ -991,8 +991,7 @@ class Circuit:
                                 print("invalid circuit, some components are shorted")
                                 self.valid = False
                                 return False
-                            # 短路边连接同一节点，跳过不添加
-                            continue
+                            # 短路边连接同一节点，不添加（但不用 continue，继续处理垂直边）
                         else:
                             if self.hcomp_direction[i][j]:
                                 n1, n2 = n2, n1
@@ -1037,8 +1036,7 @@ class Circuit:
                                 print("invalid circuit, some components are shorted")
                                 self.valid = False
                                 return False
-                            # 短路边连接同一节点，跳过不添加
-                            continue
+                            # 短路边连接同一节点，不添加
                         else:   # 不等价节点的边
                             if self.vcomp_direction[i][j]:
                                 n1, n2 = n2, n1
@@ -1197,7 +1195,7 @@ class Circuit:
                     vmeas_str = f"VI{ms_label_str}"
                     spice_str += "%s %s %s %s\n" % (vmeas_str, br["n1"], br["n2"], 0)
                 
-                if br["type"] in [TYPE_VOLTAGE_SOURCE, TYPE_CURRENT_SOURCE, TYPE_RESISTOR]:
+                if br["type"] in [TYPE_VOLTAGE_SOURCE, TYPE_CURRENT_SOURCE, TYPE_RESISTOR, TYPE_CAPACITOR, TYPE_INDUCTOR]:
                     if br["measure"] == MEAS_TYPE_CURRENT:
                         mid_node = "N%s%s" % (br['n1'], br['n2'])
                         vmeas_str = f"VI{ms_label_str}"
@@ -1298,9 +1296,24 @@ class Circuit:
                 # exit()
                 spice_str = SPICE_TEMPLATES[self.note].format(components=spice_str, simulation=sim_str)   
 
-            else:   # high order circuit
-                # TODO: add transient simulation
-                raise NotImplementedError        
+            else:   # high order circuit (含电容/电感)
+                # 使用瞬态分析
+                sim_str = ".control\ntran 1u 10m\n"
+                sim_str += ".endc\n"
+                
+                # 检查是否有三极管，添加模型定义
+                has_npn = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_NPN for br in self.branches)
+                has_pnp = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_PNP for br in self.branches)
+                model_str = ""
+                if has_npn:
+                    model_str += ".MODEL NPN_MODEL NPN\n"
+                if has_pnp:
+                    model_str += ".MODEL PNP_MODEL PNP\n"
+                if model_str:
+                    spice_str = model_str + spice_str
+                
+                print(f"spice_str: {spice_str}, \n\nsim_str: {sim_str}\n\n")
+                spice_str = SPICE_TEMPLATES[self.note].format(components=spice_str, simulation=sim_str)        
         else:
             raise NotImplementedError
 

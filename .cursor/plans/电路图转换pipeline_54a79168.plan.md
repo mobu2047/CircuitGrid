@@ -43,13 +43,13 @@ flowchart TD
     Circuit --> SPICE[_to_SPICE]
 ```
 
+
+
 ## 模块设计
 
 ### 模块1: YOLO 元件检测器
 
-**输入**: 电路原理图图像
-
-**输出**: 元件列表 + 坐标
+**输入**: 电路原理图图像**输出**: 元件列表 + 坐标
 
 ```python
 # YOLO 输出格式
@@ -72,9 +72,7 @@ flowchart TD
 
 ### 模块2: 轻量 VLM 拓扑理解
 
-**输入**: 电路原理图 + YOLO检测结果
-
-**输出**: 连接关系 JSON
+**输入**: 电路原理图 + YOLO检测结果**输出**: 连接关系 JSON
 
 ```python
 # VLM 输入格式（包含YOLO检测信息）
@@ -108,6 +106,8 @@ flowchart TD
 }
 ```
 
+
+
 ### 模块3: Grid 构建器
 
 **核心逻辑**: 将 YOLO坐标 + VLM拓扑 合并成 Grid 结构，支持边上和节点上元件
@@ -123,20 +123,20 @@ class GridBuilder:
 
     def build_grid(self) -> dict:
         """
-        1. 根据 grid_size 初始化数组
-        2. 根据 bbox 计算 vertical_dis, horizontal_dis
-        3. 处理 edge_components：填充 vcomp_*, hcomp_* 数组
-        4. 处理 node_components：为三极管等器件创建特殊节点
-        5. 返回完整 Grid JSON
+    1. 根据 grid_size 初始化数组
+    2. 根据 bbox 计算 vertical_dis, horizontal_dis
+    3. 处理 edge_components：填充 vcomp_*, hcomp_* 数组
+    4. 处理 node_components：为三极管等器件创建特殊节点
+    5. 返回完整 Grid JSON
         """
         pass
 
     def _add_transistor_to_grid(self, transistor):
         """
         处理三极管：
-        - 在基极节点位置添加三极管元件
-        - 连接基极、集电极、发射极到相应节点
-        - 根据orientation调整绘制方向
+    - 在基极节点位置添加三极管元件
+    - 连接基极、集电极、发射极到相应节点
+    - 根据orientation调整绘制方向
         """
         pass
 
@@ -145,6 +145,8 @@ class GridBuilder:
         grid = self.build_grid()
         return Circuit(**grid)
 ```
+
+
 
 ### 模块4: 格式转换（复用现有代码）
 
@@ -155,7 +157,7 @@ class GridBuilder:
 
 ## 文件结构
 
-```
+```javascript
 ppm_construction/
 ├── data_syn/
 │   ├── grid_rules.py          # 现有：Grid↔LaTeX/SPICE
@@ -171,6 +173,8 @@ ppm_construction/
 └── models/
     └── circuit_yolo.pt        # 训练好的 YOLO 模型
 ```
+
+
 
 ## 实现步骤
 
@@ -235,6 +239,8 @@ ppm_construction/
 }
 ```
 
+
+
 ## 使用示例
 
 ```python
@@ -253,6 +259,8 @@ latex_code = result.to_latex()
 spice_code = result.to_spice()
 grid_json = result.to_grid_json()
 ```
+
+
 
 ## 三极管绘制方案
 
@@ -281,8 +289,8 @@ grid_json = result.to_grid_json()
 }
 ```
 
+
+
 ### LaTeX绘制
 
 使用CircuitTikZ的`npn`或`pnp`元件，结合位置调整和连接线绘制。
-
-```
