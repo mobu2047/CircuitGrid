@@ -299,41 +299,62 @@ def draw_capacitor(canvas, x1, y1, x2, y2, color, scale, label, direction=0):
 
 @ComponentRenderer.register_edge(5)  # TYPE_INDUCTOR
 def draw_inductor(canvas, x1, y1, x2, y2, color, scale, label, direction=0):
-    """电感"""
+    """电感 - 使用清晰的半圆弧线圈"""
     mx, my = (x1+x2)/2, (y1+y2)/2
     
     is_horizontal = abs(x2-x1) > abs(y2-y1)
     num_loops = 4
-    loop_r = 5 * scale
+    loop_r = 8 * scale  # 增大半径，使线圈更清晰
+    loop_spacing = loop_r * 2  # 增大间距，避免过密
     
     if is_horizontal:
-        total_w = loop_r * 2 * num_loops
+        total_w = loop_spacing * (num_loops - 1) + loop_r * 2
         start_x = mx - total_w/2
         
+        # 连接线
         canvas.create_line(x1, y1, start_x, my, fill=color, width=2*scale)
-        canvas.create_line(mx + total_w/2, my, x2, y2, fill=color, width=2*scale)
+        canvas.create_line(start_x + total_w, my, x2, y2, fill=color, width=2*scale)
         
-        # 画弧形
+        # 绘制连续的半圆弧线圈（交替上下）
         for i in range(num_loops):
-            cx = start_x + loop_r + i * loop_r * 2
-            canvas.create_arc(cx-loop_r, my-loop_r, cx+loop_r, my+loop_r,
-                            start=0, extent=180, style=tk.ARC,
-                            outline=color, width=2*scale)
+            cx = start_x + loop_r + i * loop_spacing
+            if i % 2 == 0:
+                # 上半圆弧（从0度到180度）
+                canvas.create_arc(cx-loop_r, my-loop_r, cx+loop_r, my,
+                                 start=0, extent=180, 
+                                 style=tk.ARC, outline=color, width=2*scale, fill="")
+            else:
+                # 下半圆弧（从180度到360度）
+                canvas.create_arc(cx-loop_r, my, cx+loop_r, my+loop_r,
+                                 start=180, extent=180,
+                                 style=tk.ARC, outline=color, width=2*scale, fill="")
     else:
-        total_h = loop_r * 2 * num_loops
+        total_h = loop_spacing * (num_loops - 1) + loop_r * 2
         start_y = my - total_h/2
         
+        # 连接线
         canvas.create_line(x1, y1, mx, start_y, fill=color, width=2*scale)
-        canvas.create_line(mx, my + total_h/2, x2, y2, fill=color, width=2*scale)
+        canvas.create_line(mx, start_y + total_h, x2, y2, fill=color, width=2*scale)
         
+        # 绘制连续的半圆弧线圈（交替左右）
         for i in range(num_loops):
-            cy = start_y + loop_r + i * loop_r * 2
-            canvas.create_arc(mx-loop_r, cy-loop_r, mx+loop_r, cy+loop_r,
-                            start=90, extent=180, style=tk.ARC,
-                            outline=color, width=2*scale)
+            cy = start_y + loop_r + i * loop_spacing
+            if i % 2 == 0:
+                # 右半圆弧（从270度到90度）
+                canvas.create_arc(mx, cy-loop_r, mx+loop_r, cy+loop_r,
+                                 start=270, extent=180,
+                                 style=tk.ARC, outline=color, width=2*scale, fill="")
+            else:
+                # 左半圆弧（从90度到270度）
+                canvas.create_arc(mx-loop_r, cy-loop_r, mx, cy+loop_r,
+                                 start=90, extent=180,
+                                 style=tk.ARC, outline=color, width=2*scale, fill="")
     
     if label:
-        canvas.create_text(mx, my-loop_r-12, text=label, fill=color, font=("Arial", 9))
+        offset = loop_r + 12 if is_horizontal else loop_r + 12
+        canvas.create_text(mx + (offset if is_horizontal else 0), 
+                          my - (offset if not is_horizontal else 0),
+                          text=label, fill=color, font=("Arial", 9))
 
 
 @ComponentRenderer.register_edge(6)  # TYPE_OPEN
@@ -367,8 +388,10 @@ def draw_npn(canvas, x, y, orientation, color, scale, label, cell_size=80):
     body_r = 15 * scale
     lead_len = cell_size / 2  # 引脚延伸到相邻节点（半个格子距离）
     
-    # 根据朝向计算旋转
-    angles = {0: -90, 1: 0, 2: 90, 3: 180}
+    # 根据朝向计算旋转（与 LaTeX 相反：左右方向相反，上下方向相反）
+    # LaTeX: 0=up(90°), 1=right(0°), 2=down(-90°), 3=left(180°)
+    # Tkinter: 0=up(-90°), 1=right(180°), 2=down(90°), 3=left(0°)
+    angles = {0: -90, 1: 180, 2: 90, 3: 0}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):
@@ -424,7 +447,8 @@ def draw_pnp(canvas, x, y, orientation, color, scale, label, cell_size=80):
     body_r = 15 * scale
     lead_len = cell_size / 2
     
-    angles = {0: -90, 1: 0, 2: 90, 3: 180}
+    # 与 LaTeX 相反：左右方向相反，上下方向相反
+    angles = {0: -90, 1: 180, 2: 90, 3: 0}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):
@@ -474,7 +498,8 @@ def draw_diode(canvas, x, y, orientation, color, scale, label, cell_size=80):
     size = 12 * scale
     lead_len = 15 * scale
     
-    angles = {0: -90, 1: 0, 2: 90, 3: 180}
+    # 与 LaTeX 相反：左右方向相反，上下方向相反
+    angles = {0: -90, 1: 180, 2: 90, 3: 0}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):
@@ -519,7 +544,8 @@ def draw_opamp(canvas, x, y, orientation, color, scale, label, cell_size=80):
     h = 40 * scale
     lead_len = 15 * scale
     
-    angles = {0: -90, 1: 0, 2: 90, 3: 180}
+    # 与 LaTeX 相反：左右方向相反，上下方向相反
+    angles = {0: -90, 1: 180, 2: 90, 3: 0}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):

@@ -199,7 +199,7 @@ class GridModel:
     
     def _auto_connect_transistor(self, i: int, j: int, orientation: int) -> Dict:
         """
-        根据三极管朝向自动设置引脚连接，并创建对应的短路边
+        根据三极管朝向自动设置引脚连接（不创建短路边，由用户手动连线）
         
         orientation: 基极指向的方向
         - 0=up: B→上, C→左, E→右
@@ -223,23 +223,12 @@ class GridModel:
         else:  # left
             pin_dirs = {'base': (0, -1), 'collector': (1, 0), 'emitter': (-1, 0)}
         
-        # 设置各引脚连接，并添加短路边
+        # 只设置引脚连接，不创建短路边（由用户手动连线）
         for pin_name, (di, dj) in pin_dirs.items():
             ni, nj = i + di, j + dj
             # 检查目标节点是否在网格范围内
             if 0 <= ni < m and 0 <= nj < n:
                 connections[pin_name] = (ni, nj)
-                # 添加短路边连接
-                if di != 0:  # 垂直方向
-                    edge_i = min(i, ni)
-                    if 0 <= edge_i < m - 1:
-                        self.has_vedge[edge_i][j] = 1
-                        self.vcomp_type[edge_i][j] = 0  # TYPE_SHORT
-                elif dj != 0:  # 水平方向
-                    edge_j = min(j, nj)
-                    if 0 <= edge_j < n - 1:
-                        self.has_hedge[i][edge_j] = 1
-                        self.hcomp_type[i][edge_j] = 0  # TYPE_SHORT
         
         return connections
     
