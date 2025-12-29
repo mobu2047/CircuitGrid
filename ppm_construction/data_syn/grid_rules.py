@@ -726,7 +726,7 @@ class Circuit:
     def _is_x_node(self, i, j):
         """判断节点 (i,j) 是否是 x 节点（无圆点的四向交叉点）"""
         return self._is_4way_crossing(i, j) and self.junction_marker[i][j] == 0
-
+    
     def _get_grid_nodes(self):
         """
         使用 BFS 生成电路网格中的等价节点。
@@ -876,7 +876,7 @@ class Circuit:
         # x 节点最终赋值：取所属等价组中的任意一个编号（这里取第一个经过它的）
         # 实际上 x 节点在 component 中已经记录，可以属于多个组
         # 但 grid_nodes 只能存一个值，保持 -1 表示特殊
-        
+
         print(f"components: {components}")
         print(f"x_nodes: {x_nodes}")
         
@@ -939,7 +939,7 @@ class Circuit:
             return f"{self.x_node_groups[(i, j)][direction]}"
         else:
             return f"{int(self.grid_nodes[i][j])}"
-    
+
     def _init_netlist(self):
         """
         初始化电路网表（netlist）。
@@ -1404,9 +1404,9 @@ class Circuit:
             y = self.vertical_dis[i]
             # 使用circuitikz的circ节点绘制实心圆点
             return f"\\node[circ] at ({x:.1f},{y:.1f}) {{}};\n"
-        else:
+        else: 
             return ""
-
+        
     def to_latex(self):
         # with open("./templates/latex_template.txt", "r") as f:
         #     latex_template = f.read()

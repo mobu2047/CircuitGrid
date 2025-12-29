@@ -299,62 +299,49 @@ def draw_capacitor(canvas, x1, y1, x2, y2, color, scale, label, direction=0):
 
 @ComponentRenderer.register_edge(5)  # TYPE_INDUCTOR
 def draw_inductor(canvas, x1, y1, x2, y2, color, scale, label, direction=0):
-    """电感 - 使用清晰的半圆弧线圈"""
+    """电感 - 使用大角度圆弧线圈（所有半圆在同一侧，黑色）"""
     mx, my = (x1+x2)/2, (y1+y2)/2
+    
+    # 使用黑色
+    inductor_color = "#000000"
     
     is_horizontal = abs(x2-x1) > abs(y2-y1)
     num_loops = 4
-    loop_r = 8 * scale  # 增大半径，使线圈更清晰
-    loop_spacing = loop_r * 2  # 增大间距，避免过密
+    loop_r = 8 * scale  # 增大半径，使圆弧更饱满
+    loop_spacing = loop_r * 1.8  # 调整间距，使整体协调
+    arc_extent = 200  # 增大角度（从180度增加到200度），使圆弧更美观
     
     if is_horizontal:
         total_w = loop_spacing * (num_loops - 1) + loop_r * 2
         start_x = mx - total_w/2
         
-        # 连接线
-        canvas.create_line(x1, y1, start_x, my, fill=color, width=2*scale)
-        canvas.create_line(start_x + total_w, my, x2, y2, fill=color, width=2*scale)
+        canvas.create_line(x1, y1, start_x, my, fill=inductor_color, width=2*scale)
+        canvas.create_line(start_x + total_w, my, x2, y2, fill=inductor_color, width=2*scale)
         
-        # 绘制连续的半圆弧线圈（交替上下）
+        # 所有圆弧都在上方（同一侧），使用更大的角度
         for i in range(num_loops):
             cx = start_x + loop_r + i * loop_spacing
-            if i % 2 == 0:
-                # 上半圆弧（从0度到180度）
-                canvas.create_arc(cx-loop_r, my-loop_r, cx+loop_r, my,
-                                 start=0, extent=180, 
-                                 style=tk.ARC, outline=color, width=2*scale, fill="")
-            else:
-                # 下半圆弧（从180度到360度）
-                canvas.create_arc(cx-loop_r, my, cx+loop_r, my+loop_r,
-                                 start=180, extent=180,
-                                 style=tk.ARC, outline=color, width=2*scale, fill="")
+            # 上半圆弧，角度更大
+            canvas.create_arc(cx-loop_r, my-loop_r, cx+loop_r, my,
+                            start=-10, extent=arc_extent, style=tk.ARC,
+                            outline=inductor_color, width=2*scale)
     else:
         total_h = loop_spacing * (num_loops - 1) + loop_r * 2
         start_y = my - total_h/2
         
-        # 连接线
-        canvas.create_line(x1, y1, mx, start_y, fill=color, width=2*scale)
-        canvas.create_line(mx, start_y + total_h, x2, y2, fill=color, width=2*scale)
+        canvas.create_line(x1, y1, mx, start_y, fill=inductor_color, width=2*scale)
+        canvas.create_line(mx, start_y + total_h, x2, y2, fill=inductor_color, width=2*scale)
         
-        # 绘制连续的半圆弧线圈（交替左右）
+        # 所有圆弧都在右侧（同一侧），使用更大的角度
         for i in range(num_loops):
             cy = start_y + loop_r + i * loop_spacing
-            if i % 2 == 0:
-                # 右半圆弧（从270度到90度）
-                canvas.create_arc(mx, cy-loop_r, mx+loop_r, cy+loop_r,
-                                 start=270, extent=180,
-                                 style=tk.ARC, outline=color, width=2*scale, fill="")
-            else:
-                # 左半圆弧（从90度到270度）
-                canvas.create_arc(mx-loop_r, cy-loop_r, mx, cy+loop_r,
-                                 start=90, extent=180,
-                                 style=tk.ARC, outline=color, width=2*scale, fill="")
+            # 右半圆弧，角度更大
+            canvas.create_arc(mx, cy-loop_r, mx+loop_r, cy+loop_r,
+                            start=260, extent=arc_extent, style=tk.ARC,
+                            outline=inductor_color, width=2*scale)
     
     if label:
-        offset = loop_r + 12 if is_horizontal else loop_r + 12
-        canvas.create_text(mx + (offset if is_horizontal else 0), 
-                          my - (offset if not is_horizontal else 0),
-                          text=label, fill=color, font=("Arial", 9))
+        canvas.create_text(mx, my-loop_r-12, text=label, fill=color, font=("Arial", 9))
 
 
 @ComponentRenderer.register_edge(6)  # TYPE_OPEN
