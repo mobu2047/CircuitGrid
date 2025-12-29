@@ -572,3 +572,174 @@ def draw_opamp(canvas, x, y, orientation, color, scale, label, cell_size=80):
         'in-': (mx1, my1),
         'out': (ox2, oy2)
     }
+
+
+@ComponentRenderer.register_node(5)  # NODE_TYPE_MOSFET
+def draw_mosfet(canvas, x, y, orientation, color, scale, label, cell_size=80):
+    """MOSFET - 类似三极管但符号不同"""
+    # 使用类似三极管的绘制，但符号为 MOSFET
+    body_r = 15 * scale
+    lead_len = cell_size / 2
+    
+    angles = {0: -90, 1: 180, 2: 90, 3: 0}
+    angle = math.radians(angles.get(orientation, 0))
+    
+    def rotate(px, py):
+        cos_a, sin_a = math.cos(angle), math.sin(angle)
+        return x + px*cos_a - py*sin_a, y + px*sin_a + py*cos_a
+    
+    # 栅极（Gate）- 指向 orientation 方向
+    gx1, gy1 = rotate(lead_len, 0)
+    gx2, gy2 = rotate(body_r, 0)
+    canvas.create_line(gx1, gy1, gx2, gy2, fill=color, width=2*scale)
+    
+    # 主体（类似三极管但不同）
+    # 漏极（Drain）- 上
+    dx1, dy1 = rotate(body_r, -body_r*0.4)
+    dx2, dy2 = rotate(-body_r*0.3, -body_r*0.8)
+    dx3, dy3 = rotate(0, -lead_len)
+    canvas.create_line(dx1, dy1, dx2, dy2, fill=color, width=2*scale)
+    canvas.create_line(dx2, dy2, dx3, dy3, fill=color, width=2*scale)
+    
+    # 源极（Source）- 下
+    sx1, sy1 = rotate(body_r, body_r*0.4)
+    sx2, sy2 = rotate(-body_r*0.3, body_r*0.8)
+    sx3, sy3 = rotate(0, lead_len)
+    canvas.create_line(sx1, sy1, sx2, sy2, fill=color, width=2*scale)
+    canvas.create_line(sx2, sy2, sx3, sy3, fill=color, width=2*scale)
+    
+    # 主体竖线
+    lx1, ly1 = rotate(body_r, -body_r*0.7)
+    lx2, ly2 = rotate(body_r, body_r*0.7)
+    canvas.create_line(lx1, ly1, lx2, ly2, fill=color, width=3*scale)
+    
+    # 标签
+    if label:
+        lx, ly = rotate(body_r + 15, -body_r)
+        canvas.create_text(lx, ly, text=label, fill=color, font=("Arial", 9), anchor='w')
+    
+    return {
+        'gate': (gx1, gy1),
+        'drain': (dx3, dy3),
+        'source': (sx3, sy3)
+    }
+
+
+@ComponentRenderer.register_node(6)  # NODE_TYPE_GND
+def draw_gnd(canvas, x, y, orientation, color, scale, label, cell_size=80):
+    """接地符号"""
+    # 接地符号：水平线 + 垂直递减的短线
+    h_len = 20 * scale
+    v_len = 15 * scale
+    
+    # 水平线
+    canvas.create_line(x - h_len, y, x + h_len, y, fill=color, width=3*scale)
+    
+    # 垂直递减的短线
+    for i in range(3):
+        w = h_len * (1 - i * 0.3)
+        y_pos = y + v_len * (i + 1)
+        canvas.create_line(x - w, y_pos, x + w, y_pos, fill=color, width=2*scale)
+    
+    if label:
+        canvas.create_text(x, y - v_len - 10, text=label, fill=color, font=("Arial", 9))
+    
+    return {'gnd': (x, y + v_len * 4)}
+
+
+@ComponentRenderer.register_node(7)  # NODE_TYPE_VCC
+def draw_vcc(canvas, x, y, orientation, color, scale, label, cell_size=80):
+    """VCC 电源符号 - 实心圆点"""
+    r = 8 * scale
+    # 实心圆点
+    canvas.create_oval(x-r, y-r, x+r, y+r, outline=color, fill=color, width=2*scale)
+    
+    # 标签
+    if label:
+        canvas.create_text(x, y-r-15, text=label, fill=color, font=("Arial", 9))
+    
+    return {'vcc': (x, y)}
+
+
+@ComponentRenderer.register_node(8)  # NODE_TYPE_VDD
+def draw_vdd(canvas, x, y, orientation, color, scale, label, cell_size=80):
+    """VDD 电源符号 - 实心圆点"""
+    r = 8 * scale
+    # 实心圆点
+    canvas.create_oval(x-r, y-r, x+r, y+r, outline=color, fill=color, width=2*scale)
+    
+    # 标签
+    if label:
+        canvas.create_text(x, y-r-15, text=label, fill=color, font=("Arial", 9))
+    
+    return {'vdd': (x, y)}
+
+
+@ComponentRenderer.register_node(9)  # NODE_TYPE_VSS
+def draw_vss(canvas, x, y, orientation, color, scale, label, cell_size=80):
+    """VSS 电源符号 - 实心圆点"""
+    r = 8 * scale
+    # 实心圆点
+    canvas.create_oval(x-r, y-r, x+r, y+r, outline=color, fill=color, width=2*scale)
+    
+    # 标签
+    if label:
+        canvas.create_text(x, y+r+15, text=label, fill=color, font=("Arial", 9))
+    
+    return {'vss': (x, y)}
+
+
+@ComponentRenderer.register_node(10)  # NODE_TYPE_VEE
+def draw_vee(canvas, x, y, orientation, color, scale, label, cell_size=80):
+    """VEE 电源符号 - 实心圆点"""
+    r = 8 * scale
+    # 实心圆点
+    canvas.create_oval(x-r, y-r, x+r, y+r, outline=color, fill=color, width=2*scale)
+    
+    # 标签
+    if label:
+        canvas.create_text(x, y+r+15, text=label, fill=color, font=("Arial", 9))
+    
+    return {'vee': (x, y)}
+
+
+@ComponentRenderer.register_node(11)  # NODE_TYPE_VBB
+def draw_vbb(canvas, x, y, orientation, color, scale, label, cell_size=80):
+    """VBB 电源符号 - 实心圆点"""
+    r = 8 * scale
+    # 实心圆点
+    canvas.create_oval(x-r, y-r, x+r, y+r, outline=color, fill=color, width=2*scale)
+    
+    # 标签
+    if label:
+        canvas.create_text(x, y-r-15, text=label, fill=color, font=("Arial", 9))
+    
+    return {'vbb': (x, y)}
+
+
+@ComponentRenderer.register_node(12)  # NODE_TYPE_VIN
+def draw_vin(canvas, x, y, orientation, color, scale, label, cell_size=80):
+    """输入端口 VIN - 空心圆点"""
+    r = 8 * scale
+    # 空心圆点
+    canvas.create_oval(x-r, y-r, x+r, y+r, outline=color, fill="white", width=2*scale)
+    
+    # 标签
+    if label:
+        canvas.create_text(x, y-r-15, text=label, fill=color, font=("Arial", 9))
+    
+    return {'vin': (x, y)}
+
+
+@ComponentRenderer.register_node(13)  # NODE_TYPE_VOUT
+def draw_vout(canvas, x, y, orientation, color, scale, label, cell_size=80):
+    """输出端口 VOUT - 空心圆点"""
+    r = 8 * scale
+    # 空心圆点
+    canvas.create_oval(x-r, y-r, x+r, y+r, outline=color, fill="white", width=2*scale)
+    
+    # 标签
+    if label:
+        canvas.create_text(x, y-r-15, text=label, fill=color, font=("Arial", 9))
+    
+    return {'vout': (x, y)}

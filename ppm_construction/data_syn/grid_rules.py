@@ -31,7 +31,16 @@ NUM_NORMAL=6
     NODE_TYPE_TRANSISTOR_PNP,  # PNP三极管
     NODE_TYPE_DIODE,           # 二极管
     NODE_TYPE_OPAMP,           # 运放
-) = tuple( range(5) )
+    NODE_TYPE_MOSFET,          # MOSFET
+    NODE_TYPE_GND,             # 接地
+    NODE_TYPE_VCC,             # VCC电源
+    NODE_TYPE_VDD,             # VDD电源
+    NODE_TYPE_VSS,             # VSS电源
+    NODE_TYPE_VEE,             # VEE电源
+    NODE_TYPE_VBB,             # VBB电源
+    NODE_TYPE_VIN,             # 输入端口（节点元件）
+    NODE_TYPE_VOUT,            # 输出端口（节点元件）
+) = tuple( range(14) )
 
 # NOTE: Type of Measurements
 (
@@ -104,16 +113,36 @@ unit_scales = ["", "k", "m", "\\mu", "n", "p"]
 
 LABEL_TYPE_NUMBER, LABEL_TYPE_STRING = tuple(range(2)) # label is numerical format or string format
 # 边上元件的LaTeX信息: (circuitikz_type, label_prefix, unit)
-components_latex_info = [("short", "", ""), ("V","U","V"), ("I","I","A"), ("generic","R","\Omega"), ("C","C","F"), ("L","L","H"),
-                         ("open", "", ""), ("cisource", "", ""), ("cvsource", "", ""), ("cisource", "", ""), ("cvsource", "", "") ] # type, label, unit
+components_latex_info = [
+    ("short", "", ""),      # 0: TYPE_SHORT
+    ("V", "U", "V"),        # 1: TYPE_VOLTAGE_SOURCE
+    ("I", "I", "A"),        # 2: TYPE_CURRENT_SOURCE
+    ("generic", "R", "\\Omega"),  # 3: TYPE_RESISTOR
+    ("C", "C", "F"),        # 4: TYPE_CAPACITOR
+    ("L", "L", "H"),        # 5: TYPE_INDUCTOR
+    ("open", "", ""),       # 6: TYPE_OPEN
+    ("cisource", "", ""),   # 7: TYPE_VCCS
+    ("cvsource", "", ""),   # 8: TYPE_VCVS
+    ("cisource", "", ""),   # 9: TYPE_CCCS
+    ("cvsource", "", "")    # 10: TYPE_CCVS
+]
 
 # 节点元件的LaTeX信息: (circuitikz_type, label_prefix, unit)
 node_components_latex_info = [
-    ("", "", ""),           # NONE
-    ("npn", "Q", ""),       # NPN三极管
-    ("pnp", "Q", ""),       # PNP三极管
-    ("D", "D", ""),         # 二极管
-    ("op amp", "U", "")     # 运放
+    ("", "", ""),           # 0: NODE_TYPE_NONE
+    ("npn", "Q", ""),       # 1: NODE_TYPE_TRANSISTOR_NPN
+    ("pnp", "Q", ""),       # 2: NODE_TYPE_TRANSISTOR_PNP
+    ("D", "D", ""),         # 3: NODE_TYPE_DIODE
+    ("op amp", "U", ""),    # 4: NODE_TYPE_OPAMP
+    ("nmos", "M", ""),      # 5: NODE_TYPE_MOSFET
+    ("ground", "GND", ""),  # 6: NODE_TYPE_GND
+    ("vcc", "VCC", "V"),    # 7: NODE_TYPE_VCC
+    ("vdd", "VDD", "V"),    # 8: NODE_TYPE_VDD
+    ("vss", "VSS", "V"),    # 9: NODE_TYPE_VSS
+    ("vee", "VEE", "V"),    # 10: NODE_TYPE_VEE
+    ("vbb", "VBB", "V"),    # 11: NODE_TYPE_VBB
+    ("", "VIN", "V"),       # 12: NODE_TYPE_VIN (空心圆点)
+    ("", "VOUT", "V")       # 13: NODE_TYPE_VOUT (空心圆点)
 ]
 
 CUR_MODE_1, CUR_MODE_2, CUR_MODE_3, CUR_MODE_4, CUR_MODE_5, CUR_MODE_6 = tuple(range(6))
@@ -145,9 +174,35 @@ def get_latex_line_draw(x1, y1, x2, y2,
         print(f"measure_type: {measure_type}, measure_label: {measure_label}, measure_direction: {measure_direction}")
         type_number = int(type_number)
         
+        # #region agent log
+        try:
+            import json
+            with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"grid_rules.py:177","message":"Edge component processing","data":{"type_number":type_number,"components_latex_info_len":len(components_latex_info),"is_valid_index":type_number >= 0 and type_number < len(components_latex_info)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
+        
+        # 边界检查：如果 type_number 超出范围，返回空字符串（跳过无效的边元件）
+        # 这可以处理旧数据中可能存在的已移除的元件类型（如 TYPE_VIN=11, TYPE_VOUT=12）
+        if type_number < 0 or type_number >= len(components_latex_info):
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"grid_rules.py:185","message":"INDEX OUT OF RANGE - returning empty","data":{"type_number":type_number,"components_latex_info_len":len(components_latex_info)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            return ""  # 跳过无效的边元件类型
+        
         comp_circuitikz_type = components_latex_info[type_number][0]
         comp_label_main = components_latex_info[type_number][1]
         comp_standard_unit = components_latex_info[type_number][2]
+        
+        # #region agent log
+        try:
+            with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"F","location":"grid_rules.py:181","message":"Edge component info extracted","data":{"comp_circuitikz_type":comp_circuitikz_type,"comp_label_main":comp_label_main,"comp_standard_unit":comp_standard_unit,"comp_circuitikz_type_is_none":comp_circuitikz_type is None,"comp_label_main_is_none":comp_label_main is None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
 
         # NOTE: Get the label of the component
         labl = ""
@@ -412,9 +467,48 @@ def get_node_component_draw(x, y,
         return ""
     
     if style == "chinese":
+        # #region agent log
+        import json
+        try:
+            with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:444","message":"get_node_component_draw entry","data":{"node_type":node_type,"label":label,"x":x,"y":y,"orientation":orientation,"connections":str(connections)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
+        
+        # #region agent log
+        try:
+            import json
+            with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"grid_rules.py:467","message":"Before node_components_latex_info access","data":{"node_type":node_type,"node_components_latex_info_len":len(node_components_latex_info),"is_valid_index":node_type >= 0 and node_type < len(node_components_latex_info)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
+        
+        # #region agent log
+        try:
+            if node_type < 0 or node_type >= len(node_components_latex_info):
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"grid_rules.py:467","message":"INDEX OUT OF RANGE DETECTED (node)","data":{"node_type":node_type,"node_components_latex_info_len":len(node_components_latex_info),"node_components_latex_info":str(node_components_latex_info)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
+        
         node_info = node_components_latex_info[node_type]
+        
+        # #region agent log
+        try:
+            with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:476","message":"node_info extracted","data":{"node_info":str(node_info),"node_info_len":len(node_info) if node_info else 0},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
+        
         comp_type = node_info[0]
         comp_label_main = node_info[1]
+        
+        # #region agent log
+        try:
+            with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"grid_rules.py:448","message":"comp_type and comp_label_main","data":{"comp_type":comp_type,"comp_label_main":comp_label_main,"comp_type_is_none":comp_type is None,"comp_label_main_is_none":comp_label_main is None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
 
         # orientation的含义：0=up, 1=right, 2=down, 3=left, 转为角度
         orientation_map = {
@@ -425,13 +519,17 @@ def get_node_component_draw(x, y,
         }
         
         if node_type == NODE_TYPE_TRANSISTOR_NPN or node_type == NODE_TYPE_TRANSISTOR_PNP:
-            if not connections:
-                return ""
-            
-            # 获取三个引脚的坐标
-            cx, cy = connections.get('collector', (x, y-1))
-            bx, by = connections.get('base', (x-1, y))
-            ex, ey = connections.get('emitter', (x, y+1))
+            # 即使 connections 为空，也尝试使用默认坐标渲染
+            if connections:
+                # 获取三个引脚的坐标
+                cx, cy = connections.get('collector', (x, y-1))
+                bx, by = connections.get('base', (x-1, y))
+                ex, ey = connections.get('emitter', (x, y+1))
+            else:
+                # 如果没有 connections，使用默认坐标
+                cx, cy = (x, y-1)
+                bx, by = (x-1, y)
+                ex, ey = (x, y+1)
             
             # 将节点元件放在网格交点 (x, y) 上，避免漂移到网格外
             tx, ty = x, y
@@ -439,9 +537,6 @@ def get_node_component_draw(x, y,
             # orientation优先生效：外部指定角度
             rotation = orientation_map.get(orientation, 90)  # 默认朝上
 
-            # ⚠️兼容旧策略：如orientation未指定(默认0/90°)，允许按实际引脚方向进一步判断/微调
-            # （也可仅依据orientation，这里优先支持orientation参数驱动角度）
-            
             # 绘制三极管
             ret = f"% NPN/PNP Transistor {comp_label_main}_{{{int(label)}}}\n"
             ret += f"\\node[{comp_type}, rotate={rotation}] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
@@ -468,10 +563,19 @@ def get_node_component_draw(x, y,
             ret += f"\\node[{pos}] at ({tx + dx:.1f},{ty + dy:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
 
             # 绘制引脚连线，B、C、E三者分别按节点端口名输出
-            # 仍保持正交连接（|-），但引脚实际在tikz的(B)，(C)，(E)
-            ret += f"\\draw ({comp_label_main}{int(label)}.B) -- ({bx:.1f},{by:.1f});\n"
-            ret += f"\\draw ({comp_label_main}{int(label)}.C) |- ({cx:.1f},{cy:.1f});\n"
-            ret += f"\\draw ({comp_label_main}{int(label)}.E) |- ({ex:.1f},{ey:.1f});\n"
+            # CircuitTikZ 的 npn 节点默认方向：B在左，C在上，E在下
+            # 当 rotate=180 时，C 和 E 的位置会交换（C在下，E在上）
+            # 因此当 rotation=180 时，需要交换 C 和 E 的连接位置
+            if rotation == 180:
+                # 旋转180度时，C 和 E 位置交换
+                ret += f"\\draw ({comp_label_main}{int(label)}.B) -- ({bx:.1f},{by:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{int(label)}.C) |- ({ex:.1f},{ey:.1f});\n"  # C 连接到原 E 位置（下方）
+                ret += f"\\draw ({comp_label_main}{int(label)}.E) |- ({cx:.1f},{cy:.1f});\n"  # E 连接到原 C 位置（上方）
+            else:
+                # 其他旋转角度：正常连接
+                ret += f"\\draw ({comp_label_main}{int(label)}.B) -- ({bx:.1f},{by:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{int(label)}.C) |- ({cx:.1f},{cy:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{int(label)}.E) |- ({ex:.1f},{ey:.1f});\n"
 
             return ret
         
@@ -520,6 +624,98 @@ def get_node_component_draw(x, y,
             ret += f"\\node[{pos}] at ({x+dx:.1f},{y+dy:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
             return ret
         
+        elif node_type == NODE_TYPE_MOSFET:
+            # MOSFET 类似三极管处理
+            # 即使 connections 为空，也尝试使用默认坐标渲染
+            if connections:
+                # 获取三个引脚的坐标
+                drain_coord = connections.get('drain', (x, y-1))
+                gate_coord = connections.get('gate', (x-1, y))
+                source_coord = connections.get('source', (x, y+1))
+            else:
+                # 如果没有 connections，使用默认坐标
+                drain_coord = (x, y-1)
+                gate_coord = (x-1, y)
+                source_coord = (x, y+1)
+            
+            dx, dy = drain_coord if drain_coord is not None else (x, y-1)
+            gx, gy = gate_coord if gate_coord is not None else (x-1, y)
+            sx, sy = source_coord if source_coord is not None else (x, y+1)
+            
+            tx, ty = x, y
+            rotation = orientation_map.get(orientation, 90)
+            
+            # 确保 comp_type 不为空（应该是 "nmos"）
+            if not comp_type:
+                comp_type = "nmos"  # 默认使用 nmos
+            
+            ret = f"% MOSFET {comp_label_main}_{{{int(label)}}}\n"
+            ret += f"\\node[{comp_type}, rotate={rotation}] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
+            
+            label_position = {0: "above", 1: "right", 2: "below", 3: "left"}
+            pos = label_position.get(orientation, "right")
+            if orientation == 0:
+                dx_label, dy_label = 0, 0.5
+            elif orientation == 1:
+                dx_label, dy_label = 0.5, 0
+            elif orientation == 2:
+                dx_label, dy_label = 0, -0.5
+            elif orientation == 3:
+                dx_label, dy_label = -0.5, 0
+            else:
+                dx_label, dy_label = 0.5, 0
+            
+            ret += f"\\node[{pos}] at ({tx + dx_label:.1f},{ty + dy_label:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
+            
+            # 绘制引脚连线（MOSFET 使用 G, D, S）
+            ret += f"\\draw ({comp_label_main}{int(label)}.G) -- ({gx:.1f},{gy:.1f});\n"
+            ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
+            ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
+            
+            return ret
+        
+        elif node_type == NODE_TYPE_GND:
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"grid_rules.py:594","message":"GND processing","data":{"comp_label_main":comp_label_main,"label":label,"label_type":type(label).__name__},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            # 接地符号 - CircuitTikZ 使用 ground 或 gnd
+            ret = f"% GND {comp_label_main}_{{{int(label)}}}\n"
+            ret += f"\\draw ({x:.1f},{y:.1f}) node[ground] {{}};\n"
+            # 添加标签（如果需要）
+            if label > 0:
+                label_text = f"{comp_label_main}_{{{int(label)}}}"
+                ret += f"\\node[above] at ({x:.1f},{y:.1f}) {{${label_text}$}};\n"
+            return ret
+        
+        elif node_type in [NODE_TYPE_VCC, NODE_TYPE_VDD, NODE_TYPE_VSS, NODE_TYPE_VEE, NODE_TYPE_VBB]:
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"grid_rules.py:604","message":"Power supply processing","data":{"node_type":node_type,"comp_label_main":comp_label_main,"label":label,"label_type":type(label).__name__},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            # 电源符号 - 渲染为实心圆点
+            ret = f"% {comp_label_main} {comp_label_main}_{{{int(label)}}}\n"
+            # 使用 fill=black 绘制实心圆点
+            ret += f"\\draw[fill=black] ({x:.1f},{y:.1f}) circle (2pt);\n"
+            # 添加标签显示电源名称
+            label_text = f"{comp_label_main}_{{{int(label)}}}" if label > 0 else comp_label_main
+            ret += f"\\node[above] at ({x:.1f},{y:.1f}) {{${label_text}$}};\n"
+            return ret
+        
+        elif node_type in [NODE_TYPE_VIN, NODE_TYPE_VOUT]:
+            # 输入/输出端口 - 渲染为空心圆点
+            ret = f"% {comp_label_main} {comp_label_main}_{{{int(label)}}}\n"
+            # 使用 draw=black, fill=white 绘制空心圆点
+            ret += f"\\draw[draw=black, fill=white] ({x:.1f},{y:.1f}) circle (2pt);\n"
+            # 添加标签显示端口名称
+            label_text = f"{comp_label_main}_{{{int(label)}}}" if label > 0 else comp_label_main
+            ret += f"\\node[above] at ({x:.1f},{y:.1f}) {{${label_text}$}};\n"
+            return ret
+        
         else:
             return ""
     
@@ -551,6 +747,8 @@ SPICE_PREFFIX = {
     TYPE_CCVS: "H",
     TYPE_OPEN: "",
     TYPE_SHORT: "",
+    NODE_TYPE_VIN: "V",      # 输入端口（节点元件），使用电压源前缀
+    NODE_TYPE_VOUT: "V",     # 输出端口（节点元件），使用电压源前缀
 }
 
 class Circuit:
@@ -1109,6 +1307,84 @@ class Circuit:
                         self.branches.append(new_branch)
                         add_order += 1
                         print(f"Added transistor branch: {new_branch}")
+                    
+                    elif node_type == NODE_TYPE_MOSFET:
+                        # MOSFET 支路：获取各引脚连接的等价节点
+                        gate_node, drain_node, source_node = None, None, None
+                        orientation = self.node_comp_orientation[i][j]
+                        # gate 方向：0/2 为垂直，1/3 为水平
+                        gate_dir = 'vertical' if orientation in [0, 2] else 'horizontal'
+                        ds_dir = 'horizontal' if orientation in [0, 2] else 'vertical'
+                        
+                        if connections:
+                            if 'gate' in connections:
+                                gi, gj = self._coord_to_grid(*connections['gate'])
+                                if gi is not None:
+                                    gate_node = self._get_node_name(gi, gj, gate_dir)
+                            if 'drain' in connections:
+                                di, dj = self._coord_to_grid(*connections['drain'])
+                                if di is not None:
+                                    drain_node = self._get_node_name(di, dj, ds_dir)
+                            if 'source' in connections:
+                                si, sj = self._coord_to_grid(*connections['source'])
+                                if si is not None:
+                                    source_node = self._get_node_name(si, sj, ds_dir)
+                        
+                        new_branch = {
+                            "type": node_type,
+                            "label": self.node_comp_label[i][j],
+                            "gate_node": gate_node,
+                            "drain_node": drain_node,
+                            "source_node": source_node,
+                            "orientation": orientation,
+                            "is_node_component": True,
+                            "order": add_order
+                        }
+                        self.branches.append(new_branch)
+                        add_order += 1
+                        print(f"Added MOSFET branch: {new_branch}")
+                    
+                    elif node_type in [NODE_TYPE_VCC, NODE_TYPE_VDD, NODE_TYPE_VSS, NODE_TYPE_VEE, NODE_TYPE_VBB]:
+                        # 电源：连接到节点 0（地）
+                        node_id = self._get_node_name(i, j, 'horizontal')  # 获取当前节点
+                        if node_id is not None:
+                            new_branch = {
+                                "type": node_type,
+                                "label": self.node_comp_label[i][j],
+                                "n1": node_id,
+                                "n2": "0",  # 连接到地
+                                "value": 0,  # 默认值，可在 SPICE 中手动设置
+                                "value_unit": 0,
+                                "is_node_component": True,
+                                "order": add_order
+                            }
+                            self.branches.append(new_branch)
+                            add_order += 1
+                            print(f"Added power supply branch: {new_branch}")
+                    
+                    elif node_type in [NODE_TYPE_VIN, NODE_TYPE_VOUT]:
+                        # 输入/输出端口：连接到节点 0（地）
+                        node_id = self._get_node_name(i, j, 'horizontal')  # 获取当前节点
+                        if node_id is not None:
+                            new_branch = {
+                                "type": node_type,
+                                "label": self.node_comp_label[i][j],
+                                "n1": node_id,
+                                "n2": "0",  # 连接到地
+                                "value": 0,  # 默认值，可在 SPICE 中手动设置
+                                "value_unit": 0,
+                                "is_node_component": True,
+                                "order": add_order
+                            }
+                            self.branches.append(new_branch)
+                            add_order += 1
+                            print(f"Added VIN/VOUT branch: {new_branch}")
+                    
+                    elif node_type == NODE_TYPE_GND:
+                        # 接地：标记节点为 0（地），不需要生成单独的支路
+                        # 在节点等价计算中，GND 节点应该被标记为节点 0
+                        # 这里只记录，不生成支路
+                        print(f"Added GND at ({i}, {j})")
 
         # 校验：受控源对应的控制量支路（电压型）仅唯一一条，否则电路非法
         # 注意：跳过节点元件（三极管等）和非受控源元件的校验
@@ -1173,6 +1449,42 @@ class Circuit:
                             br["emitter_node"],
                             model_name
                         )
+                    elif br["type"] == NODE_TYPE_MOSFET:
+                        # MOSFET SPICE格式: M<name> <drain> <gate> <source> <body> <model>
+                        # 默认使用 NMOS 模型
+                        spice_str += "M%s %s %s %s 0 NMOS_MODEL\n" % (
+                            int(br["label"]),
+                            br.get("drain_node", "0"),
+                            br.get("gate_node", "0"),
+                            br.get("source_node", "0")
+                        )
+                    elif br["type"] in [NODE_TYPE_VCC, NODE_TYPE_VDD, NODE_TYPE_VSS, NODE_TYPE_VEE, NODE_TYPE_VBB]:
+                        # 电源：V<name> <node> 0 <value>
+                        power_names = {
+                            NODE_TYPE_VCC: "VCC",
+                            NODE_TYPE_VDD: "VDD",
+                            NODE_TYPE_VSS: "VSS",
+                            NODE_TYPE_VEE: "VEE",
+                            NODE_TYPE_VBB: "VBB"
+                        }
+                        power_name = power_names[br["type"]]
+                        value = br.get("value", 0)
+                        value_unit = br.get("value_unit", 0)
+                        value_str = str(int(value)) + unit_scales[value_unit] if value > 0 else "0"
+                        spice_str += "%s %s 0 %s\n" % (power_name, br.get("n1", "0"), value_str)
+                    elif br["type"] in [NODE_TYPE_VIN, NODE_TYPE_VOUT]:
+                        # 输入/输出端口：V<name> <node> 0 <value>
+                        port_names = {
+                            NODE_TYPE_VIN: "VIN",
+                            NODE_TYPE_VOUT: "VOUT"
+                        }
+                        port_name = port_names[br["type"]]
+                        value = br.get("value", 0)
+                        value_unit = br.get("value_unit", 0)
+                        value_str = str(int(value)) + unit_scales[value_unit] if value > 0 else "0"
+                        label_str = "" if br.get("label", 0) == 0 else str(int(br["label"]))
+                        spice_str += "%s%s %s 0 %s\n" % (port_name, label_str, br.get("n1", "0"), value_str)
+                    # GND 不需要生成 SPICE 代码，因为它就是节点 0
                     continue  # 跳过后续边上元件的处理
                 
                 meas_comp_same_direction = br["meas_comp_same_direction"]
@@ -1284,11 +1596,14 @@ class Circuit:
                 # 检查是否有三极管，添加模型定义
                 has_npn = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_NPN for br in self.branches)
                 has_pnp = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_PNP for br in self.branches)
+                has_mosfet = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_MOSFET for br in self.branches)
                 model_str = ""
                 if has_npn:
                     model_str += ".MODEL NPN_MODEL NPN\n"
                 if has_pnp:
                     model_str += ".MODEL PNP_MODEL PNP\n"
+                if has_mosfet:
+                    model_str += ".MODEL NMOS_MODEL NMOS\n"
                 if model_str:
                     spice_str = model_str + spice_str
                 
@@ -1304,11 +1619,14 @@ class Circuit:
                 # 检查是否有三极管，添加模型定义
                 has_npn = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_NPN for br in self.branches)
                 has_pnp = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_PNP for br in self.branches)
+                has_mosfet = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_MOSFET for br in self.branches)
                 model_str = ""
                 if has_npn:
                     model_str += ".MODEL NPN_MODEL NPN\n"
                 if has_pnp:
                     model_str += ".MODEL PNP_MODEL PNP\n"
+                if has_mosfet:
+                    model_str += ".MODEL NMOS_MODEL NMOS\n"
                 if model_str:
                     spice_str = model_str + spice_str
                 
@@ -1339,6 +1657,13 @@ class Circuit:
 
     def _draw_vertical_edge(self, i, j):
         if ((i>=0 and i<self.m-1) and (j>=0 and j<self.n)) and self.has_vedge[i][j]:
+            # #region agent log
+            try:
+                import json
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:1635","message":"_draw_vertical_edge entry","data":{"i":i,"j":j,"vcomp_type":int(self.vcomp_type[i][j]),"components_latex_info_len":len(components_latex_info)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
             if int(self.note[1:]) < 9: # <= version 4
                 raise NotImplementedError
             else:
@@ -1362,6 +1687,13 @@ class Circuit:
         
     def _draw_horizontal_edge(self, i, j):
         if ((i>=0 and i<self.m) and (j>=0 and j<self.n-1)) and self.has_hedge[i][j]:
+            # #region agent log
+            try:
+                import json
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:1658","message":"_draw_horizontal_edge entry","data":{"i":i,"j":j,"hcomp_type":int(self.hcomp_type[i][j]),"components_latex_info_len":len(components_latex_info)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
             if int(self.note[1:]) < 9: # <= version 4
                 raise NotImplementedError
             else:
@@ -1385,6 +1717,14 @@ class Circuit:
         
     def _draw_node_component(self, i, j):
         """绘制节点上的元件（三极管等）"""
+        # #region agent log
+        try:
+            import json
+            with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:1654","message":"_draw_node_component entry","data":{"i":i,"j":j,"node_comp_type":int(self.node_comp_type[i][j]) if (i>=0 and i<self.m and j>=0 and j<self.n) else None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
+        
         if ((i>=0 and i<self.m) and (j>=0 and j<self.n)) and self.node_comp_type[i][j] != NODE_TYPE_NONE:
             x = self.horizontal_dis[j]
             y = self.vertical_dis[i]
@@ -1393,7 +1733,23 @@ class Circuit:
             orientation = self.node_comp_orientation[i][j]
             connections = self.node_comp_connections[i][j]
             
-            return get_node_component_draw(x, y, node_type, label, orientation, connections, note=self.note)
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:1662","message":"Before get_node_component_draw call","data":{"node_type":int(node_type),"label":int(label) if label is not None else None,"label_type":type(label).__name__,"orientation":int(orientation),"connections":str(connections)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            
+            result = get_node_component_draw(x, y, node_type, label, orientation, connections, note=self.note)
+            
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:1668","message":"get_node_component_draw result","data":{"result":result[:100] if result else None,"result_type":type(result).__name__},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            
+            return result
         else:
             return ""
 
@@ -1421,13 +1777,33 @@ class Circuit:
         # 先绘制所有边上的元件
         for i in range(self.m):
             for j in range(self.n):
-                latex_code_main += self._draw_horizontal_edge(i,j)
-                latex_code_main += self._draw_vertical_edge(i,j)
+                h_result = self._draw_horizontal_edge(i,j)
+                v_result = self._draw_vertical_edge(i,j)
+                
+                # #region agent log
+                try:
+                    import json
+                    with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"grid_rules.py:1690","message":"Edge draw results","data":{"i":i,"j":j,"h_result":h_result[:50] if h_result else None,"h_result_type":type(h_result).__name__,"v_result":v_result[:50] if v_result else None,"v_result_type":type(v_result).__name__},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                except: pass
+                # #endregion
+                
+                latex_code_main += h_result if h_result is not None else ""
+                latex_code_main += v_result if v_result is not None else ""
         
         # 再绘制所有节点上的元件（确保三极管等在最上层）
         for i in range(self.m):
             for j in range(self.n):
-                latex_code_main += self._draw_node_component(i,j)
+                n_result = self._draw_node_component(i,j)
+                
+                # #region agent log
+                try:
+                    with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"grid_rules.py:1696","message":"Node draw result","data":{"i":i,"j":j,"n_result":n_result[:50] if n_result else None,"n_result_type":type(n_result).__name__},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                except: pass
+                # #endregion
+                
+                latex_code_main += n_result if n_result is not None else ""
         
         # 最后绘制交叉点（实心圆点，确保在最顶层）
         for i in range(self.m):
