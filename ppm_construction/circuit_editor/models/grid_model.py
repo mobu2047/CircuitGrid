@@ -190,11 +190,13 @@ class GridModel:
             self.node_comp_label[i][j] = label
             self.node_comp_orientation[i][j] = orientation
             
-            # 三极管：自动设置引脚连接和短路边
-            if comp_type in [1, 2]:  # NPN=1, PNP=2
-                connections = self._auto_connect_transistor(i, j, orientation)
+            # 取消自动连线：不再自动设置引脚连接，由用户手动连线
+            # if comp_type in [1, 2]:  # NPN=1, PNP=2
+            #     connections = self._auto_connect_transistor(i, j, orientation)
+            # elif comp_type == 5:  # MOSFET=5
+            #     connections = self._auto_connect_mosfet(i, j, orientation)
             
-            self.node_comp_connections[i][j] = connections
+            self.node_comp_connections[i][j] = connections  # 保持为 None 或用户手动设置的 connections
             self._notify_observers()
     
     def _auto_connect_transistor(self, i: int, j: int, orientation: int) -> Dict:
@@ -207,13 +209,14 @@ class GridModel:
         - 2=down: B→下, C→右, E→左
         - 3=left: B→左, C→下, E→上
         
-        返回: connections 字典 {'base': (i,j), 'collector': (i,j), 'emitter': (i,j)}
+        返回: connections 字典 {'base': (x,y), 'collector': (x,y), 'emitter': (x,y)}
+        注意：返回的是物理坐标（与手动连接格式一致），不是网格坐标
         """
         connections = {}
         m, n = self.m, self.n
         
         # 根据朝向定义各引脚连接的相对位置
-        # (di, dj) 表示相对于元件位置的偏移
+        # (di, dj) 表示相对于元件位置的偏移（网格坐标）
         if orientation == 0:  # up
             pin_dirs = {'base': (-1, 0), 'collector': (0, -1), 'emitter': (0, 1)}
         elif orientation == 1:  # right
@@ -224,11 +227,55 @@ class GridModel:
             pin_dirs = {'base': (0, -1), 'collector': (1, 0), 'emitter': (-1, 0)}
         
         # 只设置引脚连接，不创建短路边（由用户手动连线）
+        # 将网格坐标转换为物理坐标（与手动连接格式一致）
         for pin_name, (di, dj) in pin_dirs.items():
             ni, nj = i + di, j + dj
             # 检查目标节点是否在网格范围内
             if 0 <= ni < m and 0 <= nj < n:
-                connections[pin_name] = (ni, nj)
+                # 转换为物理坐标（与手动连接格式一致）
+                phys_x = self.horizontal_dis[nj]
+                phys_y = self.vertical_dis[ni]
+                connections[pin_name] = (phys_x, phys_y)
+        
+        return connections
+    
+    def _auto_connect_mosfet(self, i: int, j: int, orientation: int) -> Dict:
+        """
+        根据MOSFET朝向自动设置引脚连接（不创建短路边，由用户手动连线）
+        
+        orientation: 栅极指向的方向
+        - 0=up: G→上, D→左, S→右
+        - 1=right: G→右, D→上, S→下
+        - 2=down: G→下, D→右, S→左
+        - 3=left: G→左, D→下, S→上
+        
+        返回: connections 字典 {'gate': (x,y), 'drain': (x,y), 'source': (x,y)}
+        注意：返回的是物理坐标（与手动连接格式一致），不是网格坐标
+        """
+        connections = {}
+        m, n = self.m, self.n
+        
+        # 根据朝向定义各引脚连接的相对位置
+        # (di, dj) 表示相对于元件位置的偏移（网格坐标）
+        if orientation == 0:  # up
+            pin_dirs = {'gate': (-1, 0), 'drain': (0, -1), 'source': (0, 1)}
+        elif orientation == 1:  # right
+            pin_dirs = {'gate': (0, 1), 'drain': (-1, 0), 'source': (1, 0)}
+        elif orientation == 2:  # down
+            pin_dirs = {'gate': (1, 0), 'drain': (0, 1), 'source': (0, -1)}
+        else:  # left
+            pin_dirs = {'gate': (0, -1), 'drain': (1, 0), 'source': (-1, 0)}
+        
+        # 只设置引脚连接，不创建短路边（由用户手动连线）
+        # 将网格坐标转换为物理坐标（与手动连接格式一致）
+        for pin_name, (di, dj) in pin_dirs.items():
+            ni, nj = i + di, j + dj
+            # 检查目标节点是否在网格范围内
+            if 0 <= ni < m and 0 <= nj < n:
+                # 转换为物理坐标（与手动连接格式一致）
+                phys_x = self.horizontal_dis[nj]
+                phys_y = self.vertical_dis[ni]
+                connections[pin_name] = (phys_x, phys_y)
         
         return connections
     

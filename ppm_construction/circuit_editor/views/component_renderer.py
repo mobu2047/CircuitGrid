@@ -396,27 +396,37 @@ def draw_npn(canvas, x, y, orientation, color, scale, label, cell_size=80):
     lx2, ly2 = rotate(body_r, body_r*0.7)
     canvas.create_line(lx1, ly1, lx2, ly2, fill=color, width=3*scale)
     
-    # 集电极（垂直于基极方向，在"上"侧）- 延伸到相邻节点
-    cx1, cy1 = rotate(body_r, -body_r*0.4)
+    # 集电极和发射极位置：与 CircuitTikZ 标准一致
+    # CircuitTikZ 中 npn 节点标准：C 在上，E 在下
+    # 工具中也应该：C 在上（负y方向），E 在下（正y方向）
+    # 这样工具和 LaTeX 渲染就完全一致了
+    cx1, cy1 = rotate(body_r, -body_r*0.4)  # C在上
     cx2, cy2 = rotate(-body_r*0.3, -body_r*0.8)
-    cx3, cy3 = rotate(0, -lead_len)  # 集电极末端（相邻节点位置）
+    cx3, cy3 = rotate(0, -lead_len)  # 集电极在上方（负y方向）
+    ex1, ey1 = rotate(body_r, body_r*0.4)  # E在下
+    ex2, ey2 = rotate(-body_r*0.3, body_r*0.8)
+    ex3, ey3 = rotate(0, lead_len)  # 发射极在下方（正y方向）
+    
     canvas.create_line(cx1, cy1, cx2, cy2, fill=color, width=2*scale)
     canvas.create_line(cx2, cy2, cx3, cy3, fill=color, width=2*scale)
-    
-    # 发射极（垂直于基极方向，在"下"侧，带箭头）- 延伸到相邻节点
-    ex1, ey1 = rotate(body_r, body_r*0.4)
-    ex2, ey2 = rotate(-body_r*0.3, body_r*0.8)
-    ex3, ey3 = rotate(0, lead_len)  # 发射极末端（相邻节点位置）
     canvas.create_line(ex1, ey1, ex2, ey2, fill=color, width=2*scale)
     canvas.create_line(ex2, ey2, ex3, ey3, fill=color, width=2*scale)
     
-    # 箭头（在发射极上，指向外）
+    # 箭头（在发射极上，指向外）- E 在下方
     canvas.create_line(ex1, ey1, ex2, ey2, fill=color, width=2*scale, arrow=tk.LAST, arrowshape=(8, 10, 4))
     
     # 标签
     if label:
         lx, ly = rotate(body_r + 15, -body_r)
         canvas.create_text(lx, ly, text=label, fill=color, font=("Arial", 9), anchor='w')
+    
+    # #region agent log
+    try:
+        import json
+        with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"component_renderer.py:431","message":"NPN draw_npn return","data":{"orientation":orientation,"base":(bx1,by1),"collector":(cx3,cy3),"emitter":(ex3,ey3)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+    except: pass
+    # #endregion
     
     # 返回引脚位置（末端坐标，对应相邻节点）
     return {
@@ -452,17 +462,21 @@ def draw_pnp(canvas, x, y, orientation, color, scale, label, cell_size=80):
     lx2, ly2 = rotate(body_r, body_r*0.7)
     canvas.create_line(lx1, ly1, lx2, ly2, fill=color, width=3*scale)
     
-    # 集电极
-    cx1, cy1 = rotate(body_r, -body_r*0.4)
-    cx2, cy2 = rotate(-body_r*0.3, -body_r*0.8)
-    cx3, cy3 = rotate(0, -lead_len)
+    # 此代码用于绘制PNP型三极管的集电极（C）和发射极（E）的可视化连接线端点坐标。
+    # 其中：
+    #   - 集电极端（C，collector）始终位于器件的“上方”。
+    #   - 发射极端（E，emitter）始终位于器件的“下方”。
+    # 相关坐标计算通过 rotate() 方法按当前方向旋转和偏移。
+    # 这样即保证三极管无论旋转到哪个方向，C/E端都能与相邻网格节点中心自动对齐，便于连线和逻辑统一。
+    cx1, cy1 = rotate(body_r, -body_r*0.4)         # 集电极线的起点（靠近主体）
+    cx2, cy2 = rotate(-body_r*0.3, -body_r*0.8)    # 集电极线的拐角
+    cx3, cy3 = rotate(0, -lead_len)                # 集电极末端（上方远点，连到节点）
+    ex1, ey1 = rotate(body_r, body_r*0.4)          # 发射极线的起点（靠近主体）
+    ex2, ey2 = rotate(-body_r*0.3, body_r*0.8)     # 发射极线的拐角
+    ex3, ey3 = rotate(0, lead_len)                 # 发射极末端（下方远点，连到节点）
+    
     canvas.create_line(cx1, cy1, cx2, cy2, fill=color, width=2*scale)
     canvas.create_line(cx2, cy2, cx3, cy3, fill=color, width=2*scale)
-    
-    # 发射极（箭头指向内，即指向基极方向）
-    ex1, ey1 = rotate(body_r, body_r*0.4)
-    ex2, ey2 = rotate(-body_r*0.3, body_r*0.8)
-    ex3, ey3 = rotate(0, lead_len)
     # 箭头在发射极上，指向内
     canvas.create_line(ex2, ey2, ex1, ey1, fill=color, width=2*scale, arrow=tk.LAST, arrowshape=(8, 10, 4))
     canvas.create_line(ex2, ey2, ex3, ey3, fill=color, width=2*scale)
@@ -471,6 +485,14 @@ def draw_pnp(canvas, x, y, orientation, color, scale, label, cell_size=80):
     if label:
         lx, ly = rotate(body_r + 15, -body_r)
         canvas.create_text(lx, ly, text=label, fill=color, font=("Arial", 9), anchor='w')
+    
+    # #region agent log
+    try:
+        import json
+        with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"F","location":"component_renderer.py:477","message":"PNP draw_pnp return","data":{"orientation":orientation,"base":(bx1,by1),"collector":(cx3,cy3),"emitter":(ex3,ey3)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+    except: pass
+    # #endregion
     
     return {
         'base': (bx1, by1),
@@ -594,17 +616,19 @@ def draw_mosfet(canvas, x, y, orientation, color, scale, label, cell_size=80):
     canvas.create_line(gx1, gy1, gx2, gy2, fill=color, width=2*scale)
     
     # 主体（类似三极管但不同）
-    # 漏极（Drain）- 上
-    dx1, dy1 = rotate(body_r, -body_r*0.4)
+    # 漏极和源极位置：根据用户反馈修复
+    # - MOSFET right/left: 上下镜像翻转 -> 需要不翻转（D在上，S在下）
+    # - MOSFET up/down: 左右接口方向正确，但是上下镜像翻转 -> 需要不翻转（D在上，S在下）
+    # 所有方向都使用标准位置：D在上，S在下
+    dx1, dy1 = rotate(body_r, -body_r*0.4)  # D在上
     dx2, dy2 = rotate(-body_r*0.3, -body_r*0.8)
-    dx3, dy3 = rotate(0, -lead_len)
+    dx3, dy3 = rotate(0, -lead_len)  # 漏极在上方
+    sx1, sy1 = rotate(body_r, body_r*0.4)  # S在下
+    sx2, sy2 = rotate(-body_r*0.3, body_r*0.8)
+    sx3, sy3 = rotate(0, lead_len)  # 源极在下方
+    
     canvas.create_line(dx1, dy1, dx2, dy2, fill=color, width=2*scale)
     canvas.create_line(dx2, dy2, dx3, dy3, fill=color, width=2*scale)
-    
-    # 源极（Source）- 下
-    sx1, sy1 = rotate(body_r, body_r*0.4)
-    sx2, sy2 = rotate(-body_r*0.3, body_r*0.8)
-    sx3, sy3 = rotate(0, lead_len)
     canvas.create_line(sx1, sy1, sx2, sy2, fill=color, width=2*scale)
     canvas.create_line(sx2, sy2, sx3, sy3, fill=color, width=2*scale)
     
@@ -617,6 +641,14 @@ def draw_mosfet(canvas, x, y, orientation, color, scale, label, cell_size=80):
     if label:
         lx, ly = rotate(body_r + 15, -body_r)
         canvas.create_text(lx, ly, text=label, fill=color, font=("Arial", 9), anchor='w')
+    
+    # #region agent log
+    try:
+        import json
+        with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"component_renderer.py:624","message":"MOSFET draw_mosfet return","data":{"orientation":orientation,"gate":(gx1,gy1),"drain":(dx3,dy3),"source":(sx3,sy3)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+    except: pass
+    # #endregion
     
     return {
         'gate': (gx1, gy1),

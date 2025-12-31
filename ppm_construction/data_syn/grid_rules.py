@@ -511,35 +511,113 @@ def get_node_component_draw(x, y,
         # #endregion
 
         # orientation的含义：0=up, 1=right, 2=down, 3=left, 转为角度
+        # 关键修复：工具中的旋转角度与LaTeX的旋转角度相差180度
+        # 工具中：{0: -90, 1: 180, 2: 90, 3: 0}
+        # 为了保持一致，LaTeX中也使用相同的角度
+        # 修复：交换 up 和 down 方向的名称（orientation=0 和 orientation=2 交换）
         orientation_map = {
-            0: 90,
-            1: 0,
-            2: -90,
-            3: 180
+            0: 90,    # 交换后：原来 orientation=2 (down) 的角度
+            1: 180,   # 与工具一致（原来是0）
+            2: -90,   # 交换后：原来 orientation=0 (up) 的角度
+            3: 0      # 与工具一致（原来是180）
         }
         
         if node_type == NODE_TYPE_TRANSISTOR_NPN or node_type == NODE_TYPE_TRANSISTOR_PNP:
+            # #region agent log
+            try:
+                import json
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:521","message":"NPN/PNP processing entry","data":{"node_type":node_type,"orientation":orientation,"x":x,"y":y,"connections":str(connections)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            
             # 即使 connections 为空，也尝试使用默认坐标渲染
+            # 注意：在 LaTeX 坐标系统中，y 值大 = 上方，y 值小 = 下方
+            # 工具中 C 在上 → connections 中应该存储上方节点的坐标（y值大）
+            # 工具中 E 在下 → connections 中应该存储下方节点的坐标（y值小）
             if connections:
-                # 获取三个引脚的坐标
-                cx, cy = connections.get('collector', (x, y-1))
-                bx, by = connections.get('base', (x-1, y))
-                ex, ey = connections.get('emitter', (x, y+1))
+                # PNP 和 NPN 的 E 坐标需要相反, 这里区分处理
+                is_pnp = (node_type == NODE_TYPE_TRANSISTOR_PNP)
+                # orientation: 0=up, 1=right, 2=down, 3=left
+                if orientation == 0:  # up
+                    cx, cy = connections.get('collector', (x, y-1))
+                    bx, by = connections.get('base', (x-1, y+1))
+                    if is_pnp:
+                        ex, ey = connections.get('emitter', (x, y-1))
+                        cx, cy = connections.get('collector', (x, y+1))  # PNP: emitter 在下
+                    else:
+                        ex, ey = connections.get('emitter', (x, y+1))
+                        cx, cy = connections.get('collector', (x, y-1))  # NPN: emitter 在上
+                elif orientation == 1:  # right
+                    
+                    bx, by = connections.get('base', (x, y+1))
+                    if is_pnp:
+                        ex, ey = connections.get('emitter', (x+1, y))
+                        cx, cy = connections.get('collector', (x-1, y))  # PNP: emitter 在右
+                    else:
+                        ex, ey = connections.get('emitter', (x-1, y))
+                        cx, cy = connections.get('collector', (x+1, y))  # NPN: emitter 在左
+                elif orientation == 2:  # down
+                    
+                    bx, by = connections.get('base', (x+1, y))
+                    if is_pnp:
+                        ex, ey = connections.get('emitter', (x, y+1))
+                        cx, cy = connections.get('collector', (x, y-1))  # PNP: emitter 在上
+                    else:
+                        ex, ey = connections.get('emitter', (x, y-1)) 
+                        cx, cy = connections.get('collector', (x, y+1)) # NPN: emitter 在下
+                elif orientation == 3:  # left
+                    
+                    bx, by = connections.get('base', (x, y-1))
+                    if is_pnp:
+                        ex, ey = connections.get('emitter', (x-1, y))
+                        cx, cy = connections.get('collector', (x+1, y))  # PNP: emitter 在左
+                    else:
+                        ex, ey = connections.get('emitter', (x+1, y))
+                        cx, cy = connections.get('collector', (x-1, y))  # NPN: emitter 在右
+                else:  # fallback (如遇异常朝向)
+                    
+                    bx, by = connections.get('base', (x-1, y))
+                    if is_pnp:
+                        ex, ey = connections.get('emitter', (x, y-1))
+                        cx, cy = connections.get('collector', (x, y+1))
+                    else:
+                        ex, ey = connections.get('emitter', (x, y+1))
+                        cx, cy = connections.get('collector', (x, y-1))
             else:
                 # 如果没有 connections，使用默认坐标
-                cx, cy = (x, y-1)
+                cx, cy = (x, y+1)  # collector 在上方
                 bx, by = (x-1, y)
-                ex, ey = (x, y+1)
+                ex, ey = (x, y-1)  # emitter 在下方
+            
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:533","message":"NPN/PNP connections extracted","data":{"cx":cx,"cy":cy,"bx":bx,"by":by,"ex":ex,"ey":ey},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
             
             # 将节点元件放在网格交点 (x, y) 上，避免漂移到网格外
             tx, ty = x, y
 
             # orientation优先生效：外部指定角度
+            # 注意：up 和 down 方向的名称已交换（orientation=0 和 orientation=2 交换）
             rotation = orientation_map.get(orientation, 90)  # 默认朝上
+            
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"grid_rules.py:538","message":"NPN/PNP rotation calculated","data":{"orientation":orientation,"rotation":rotation},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
 
             # 绘制三极管
+            # 修复左右镜像翻转：所有方向都需要水平镜像（xscale=-1）
             ret = f"% NPN/PNP Transistor {comp_label_main}_{{{int(label)}}}\n"
-            ret += f"\\node[{comp_type}, rotate={rotation}] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
+            if is_pnp:
+                ret += f"\\node[{comp_type}, rotate={rotation}, xscale=-1, yscale=-1] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
+            else:
+                ret += f"\\node[{comp_type}, rotate={rotation}, xscale=-1] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
 
             # 标签方向随朝向，默认在右侧（朝右时），其余方向在适当侧
             label_position = {
@@ -560,22 +638,27 @@ def get_node_component_draw(x, y,
             else:
                 dx, dy = 0.5, 0
 
-            ret += f"\\node[{pos}] at ({tx + dx:.1f},{ty + dy:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
+            # 使用 \ctikzflipx{} 来修正标签方向（因为使用了 xscale=-1）
+            ret += f"\\node[{pos}] at ({tx + dx:.1f},{ty + dy:.1f}) {{\\ctikzflipx{{${comp_label_main}_{{{int(label)}}}$}}}};\n"
 
-            # 绘制引脚连线，B、C、E三者分别按节点端口名输出
-            # CircuitTikZ 的 npn 节点默认方向：B在左，C在上，E在下
-            # 当 rotate=180 时，C 和 E 的位置会交换（C在下，E在上）
-            # 因此当 rotation=180 时，需要交换 C 和 E 的连接位置
-            if rotation == 180:
-                # 旋转180度时，C 和 E 位置交换
-                ret += f"\\draw ({comp_label_main}{int(label)}.B) -- ({bx:.1f},{by:.1f});\n"
-                ret += f"\\draw ({comp_label_main}{int(label)}.C) |- ({ex:.1f},{ey:.1f});\n"  # C 连接到原 E 位置（下方）
-                ret += f"\\draw ({comp_label_main}{int(label)}.E) |- ({cx:.1f},{cy:.1f});\n"  # E 连接到原 C 位置（上方）
-            else:
-                # 其他旋转角度：正常连接
-                ret += f"\\draw ({comp_label_main}{int(label)}.B) -- ({bx:.1f},{by:.1f});\n"
-                ret += f"\\draw ({comp_label_main}{int(label)}.C) |- ({cx:.1f},{cy:.1f});\n"
-                ret += f"\\draw ({comp_label_main}{int(label)}.E) |- ({ex:.1f},{ey:.1f});\n"
+            
+            ret += f"\\draw ({comp_label_main}{int(label)}.B) -- ({bx:.1f},{by:.1f});\n"
+            
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"grid_rules.py:587","message":"Before NPN/PNP pin connection","data":{"orientation":orientation,"rotation":rotation,"node_type":node_type,"cx":cx,"cy":cy,"ex":ex,"ey":ey},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+
+            ret += f"\\draw ({comp_label_main}{int(label)}.C) |- ({cx:.1f},{cy:.1f});\n"
+            ret += f"\\draw ({comp_label_main}{int(label)}.E) |- ({ex:.1f},{ey:.1f});\n"
+            
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"grid_rules.py:602","message":"NPN/PNP pin connection result","data":{"orientation":orientation,"node_type":node_type},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
 
             return ret
         
@@ -625,32 +708,62 @@ def get_node_component_draw(x, y,
             return ret
         
         elif node_type == NODE_TYPE_MOSFET:
+            # #region agent log
+            try:
+                import json
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"grid_rules.py:634","message":"MOSFET processing entry","data":{"orientation":orientation,"x":x,"y":y,"connections":str(connections)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            
             # MOSFET 类似三极管处理
             # 即使 connections 为空，也尝试使用默认坐标渲染
+            # 注意：在 LaTeX 坐标系统中，y 值大 = 上方，y 值小 = 下方
+            # 工具中 D 在上 → connections 中应该存储上方节点的坐标（y值大）
+            # 工具中 S 在下 → connections 中应该存储下方节点的坐标（y值小）
             if connections:
                 # 获取三个引脚的坐标
-                drain_coord = connections.get('drain', (x, y-1))
+                drain_coord = connections.get('drain', (x, y+1))   # drain 在上方（y+1，更大的y值）
                 gate_coord = connections.get('gate', (x-1, y))
-                source_coord = connections.get('source', (x, y+1))
+                source_coord = connections.get('source', (x, y-1))  # source 在下方（y-1，更小的y值）
             else:
                 # 如果没有 connections，使用默认坐标
-                drain_coord = (x, y-1)
+                drain_coord = (x, y+1)   # drain 在上方
                 gate_coord = (x-1, y)
-                source_coord = (x, y+1)
+                source_coord = (x, y-1)  # source 在下方
             
-            dx, dy = drain_coord if drain_coord is not None else (x, y-1)
+            dx, dy = drain_coord if drain_coord is not None else (x, y+1)
             gx, gy = gate_coord if gate_coord is not None else (x-1, y)
-            sx, sy = source_coord if source_coord is not None else (x, y+1)
+            sx, sy = source_coord if source_coord is not None else (x, y-1)
+            
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"grid_rules.py:648","message":"MOSFET connections extracted","data":{"dx":dx,"dy":dy,"gx":gx,"gy":gy,"sx":sx,"sy":sy},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
             
             tx, ty = x, y
+            # 注意：up 和 down 方向的名称已交换（orientation=0 和 orientation=2 交换）
             rotation = orientation_map.get(orientation, 90)
+            
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"grid_rules.py:653","message":"MOSFET rotation calculated","data":{"orientation":orientation,"rotation":rotation},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
             
             # 确保 comp_type 不为空（应该是 "nmos"）
             if not comp_type:
                 comp_type = "nmos"  # 默认使用 nmos
             
             ret = f"% MOSFET {comp_label_main}_{{{int(label)}}}\n"
-            ret += f"\\node[{comp_type}, rotate={rotation}] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
+            # 只有旋转不为0时才添加yscale=-1，否则只做xscale=-1
+            if rotation == 0:
+                ret += f"\\node[{comp_type}, rotate={rotation}, xscale=-1] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
+            else:
+                ret += f"\\node[{comp_type}, rotate={rotation}, xscale=-1, yscale=-1] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
             
             label_position = {0: "above", 1: "right", 2: "below", 3: "left"}
             pos = label_position.get(orientation, "right")
@@ -665,12 +778,66 @@ def get_node_component_draw(x, y,
             else:
                 dx_label, dy_label = 0.5, 0
             
-            ret += f"\\node[{pos}] at ({tx + dx_label:.1f},{ty + dy_label:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
+            # 使用 \ctikzflipx{} 来修正标签方向（因为使用了 xscale=-1）
+            ret += f"\\node[{pos}] at ({tx + dx_label:.1f},{ty + dy_label:.1f}) {{\\ctikzflipx{{${comp_label_main}_{{{int(label)}}}$}}}};\n"
             
             # 绘制引脚连线（MOSFET 使用 G, D, S）
+            # CircuitTikZ 的 nmos 节点旋转规则与 npn 相同
+            # - rotation=0:   D在上，S在下（正常）
+            # - rotation=90:  D在右，S在左（xy关系互换）
+            # - rotation=-90: D在左，S在右（xy关系互换）
+            # - rotation=180: D在下，S在上（上下反转）
+            
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"grid_rules.py:697","message":"Before MOSFET pin connection","data":{"orientation":orientation,"rotation":rotation,"dx":dx,"dy":dy,"gx":gx,"gy":gy,"sx":sx,"sy":sy},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            
             ret += f"\\draw ({comp_label_main}{int(label)}.G) -- ({gx:.1f},{gy:.1f});\n"
-            ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
-            ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
+            
+            # 根本修复：修正了LaTeX中的旋转角度，使其与工具一致
+            # 现在工具和LaTeX的旋转角度相同，不需要交换D和S
+            # 直接连接即可（与NPN相同逻辑）
+            
+            # 根据旋转角度动态调整连接逻辑
+            if rotation == 0:
+                # 不旋转：D在上，S在下，正常连接
+                ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
+            elif rotation == 90:
+                # 旋转90度：D在右，S在左，xy关系互换
+                if dx > sx:  # dx的x值大，对应D在右
+                    ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
+                    ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
+                else:  # sx的x值大，需要交换
+                    ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({sx:.1f},{sy:.1f});\n"
+                    ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({dx:.1f},{dy:.1f});\n"
+            elif rotation == -90:
+                # 旋转-90度：D在左，S在右，xy关系互换
+                if dx < sx:  # dx的x值小，对应D在左
+                    ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
+                    ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
+                else:  # sx的x值小，需要交换
+                    ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({sx:.1f},{sy:.1f});\n"
+                    ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({dx:.1f},{dy:.1f});\n"
+            elif rotation == 180:
+                # 旋转180度：D在下，S在上，上下反转
+                # 需要交换D和S
+                ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({sx:.1f},{sy:.1f});\n"  # D连接到原S位置
+                ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({dx:.1f},{dy:.1f});\n"  # S连接到原D位置
+            else:
+                # 其他角度，默认正常连接
+                ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
+            
+            # #region agent log
+            try:
+                with open(r"c:\Users\tiany\Desktop\MAPS-master\.cursor\debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"grid_rules.py:710","message":"MOSFET pin connection result","data":{"orientation":orientation},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
             
             return ret
         
@@ -1740,6 +1907,8 @@ class Circuit:
             except: pass
             # #endregion
             
+            # connections 现在统一存储物理坐标（x, y）
+            # 不再需要转换，直接使用
             result = get_node_component_draw(x, y, node_type, label, orientation, connections, note=self.note)
             
             # #region agent log
