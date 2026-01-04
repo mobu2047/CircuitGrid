@@ -31,7 +31,8 @@ NUM_NORMAL=6
     NODE_TYPE_TRANSISTOR_PNP,  # PNP三极管
     NODE_TYPE_DIODE,           # 二极管
     NODE_TYPE_OPAMP,           # 运放
-    NODE_TYPE_MOSFET,          # MOSFET
+    NODE_TYPE_MOSFET,          # N沟道MOSFET
+    NODE_TYPE_MOSFET_P,        # P沟道MOSFET
     NODE_TYPE_GND,             # 接地
     NODE_TYPE_VCC,             # VCC电源
     NODE_TYPE_VDD,             # VDD电源
@@ -40,7 +41,7 @@ NUM_NORMAL=6
     NODE_TYPE_VBB,             # VBB电源
     NODE_TYPE_VIN,             # 输入端口（节点元件）
     NODE_TYPE_VOUT,            # 输出端口（节点元件）
-) = tuple( range(14) )
+) = tuple( range(15) )
 
 # NOTE: Type of Measurements
 (
@@ -68,6 +69,7 @@ vlt7_latex_template = r"""\documentclass[border=10pt]{standalone}
 \begin{circuitikz}[line width=1pt]
 \ctikzset{tripoles/en amp/input height=0.5};
 \ctikzset{inductors/scale=1.2, inductor=american}
+\ctikzset{tripoles/mos style/arrows}
 <main>
 \end{circuitikz}
 \end{center}
@@ -82,6 +84,7 @@ v8_latex_template = r"""\documentclass[border=10pt]{standalone}
 \begin{circuitikz}[line width=1pt]
 \ctikzset{tripoles/en amp/input height=0.5};
 \ctikzset{inductors/scale=1.2, inductor=american}
+\ctikzset{tripoles/mos style/arrows}
 <main>
 \end{circuitikz}
 \end{center}
@@ -96,6 +99,7 @@ v8_latex_template = r"""\documentclass[border=10pt]{standalone}
 \begin{circuitikz}[line width=1pt]
 \ctikzset{tripoles/en amp/input height=0.5};
 \ctikzset{inductors/scale=1.2, inductor=american}
+\ctikzset{tripoles/mos style/arrows}
 <main>
 \end{circuitikz}
 \end{center}
@@ -134,15 +138,16 @@ node_components_latex_info = [
     ("pnp", "Q", ""),       # 2: NODE_TYPE_TRANSISTOR_PNP
     ("D", "D", ""),         # 3: NODE_TYPE_DIODE
     ("op amp", "U", ""),    # 4: NODE_TYPE_OPAMP
-    ("nmos", "M", ""),      # 5: NODE_TYPE_MOSFET
-    ("ground", "GND", ""),  # 6: NODE_TYPE_GND
-    ("vcc", "VCC", "V"),    # 7: NODE_TYPE_VCC
-    ("vdd", "VDD", "V"),    # 8: NODE_TYPE_VDD
-    ("vss", "VSS", "V"),    # 9: NODE_TYPE_VSS
-    ("vee", "VEE", "V"),    # 10: NODE_TYPE_VEE
-    ("vbb", "VBB", "V"),    # 11: NODE_TYPE_VBB
-    ("", "VIN", "V"),       # 12: NODE_TYPE_VIN (空心圆点)
-    ("", "VOUT", "V")       # 13: NODE_TYPE_VOUT (空心圆点)
+    ("nmos", "M", ""),      # 5: NODE_TYPE_MOSFET (N沟道)
+    ("pmos", "M", ""),      # 6: NODE_TYPE_MOSFET_P (P沟道)
+    ("ground", "GND", ""),  # 7: NODE_TYPE_GND
+    ("vcc", "VCC", "V"),    # 8: NODE_TYPE_VCC
+    ("vdd", "VDD", "V"),    # 9: NODE_TYPE_VDD
+    ("vss", "VSS", "V"),    # 10: NODE_TYPE_VSS
+    ("vee", "VEE", "V"),    # 11: NODE_TYPE_VEE
+    ("vbb", "VBB", "V"),    # 12: NODE_TYPE_VBB
+    ("", "VIN", "V"),       # 13: NODE_TYPE_VIN (空心圆点)
+    ("", "VOUT", "V")       # 14: NODE_TYPE_VOUT (空心圆点)
 ]
 
 CUR_MODE_1, CUR_MODE_2, CUR_MODE_3, CUR_MODE_4, CUR_MODE_5, CUR_MODE_6 = tuple(range(6))
@@ -638,8 +643,9 @@ def get_node_component_draw(x, y,
             else:
                 dx, dy = 0.5, 0
 
-            # 使用 \ctikzflipx{} 来修正标签方向（因为使用了 xscale=-1）
-            ret += f"\\node[{pos}] at ({tx + dx:.1f},{ty + dy:.1f}) {{\\ctikzflipx{{${comp_label_main}_{{{int(label)}}}$}}}};\n"
+            # 确保文字不随节点旋转：使用 rotate=0 明确指定文字不旋转
+            # 直接使用普通文本节点，不应用任何翻转
+            ret += f"\\node[{pos}, rotate=0] at ({tx + dx:.1f},{ty + dy:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
 
             
             ret += f"\\draw ({comp_label_main}{int(label)}.B) -- ({bx:.1f},{by:.1f});\n"
@@ -704,7 +710,8 @@ def get_node_component_draw(x, y,
                 dx, dy = -0.5, 0
             else:
                 dx, dy = 0.5, 0
-            ret += f"\\node[{pos}] at ({x+dx:.1f},{y+dy:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
+            # 确保文字不随节点旋转：使用 rotate=0 明确指定文字不旋转
+            ret += f"\\node[{pos}, rotate=0] at ({x+dx:.1f},{y+dy:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
             return ret
         
         elif node_type == NODE_TYPE_MOSFET:
@@ -778,8 +785,9 @@ def get_node_component_draw(x, y,
             else:
                 dx_label, dy_label = 0.5, 0
             
-            # 使用 \ctikzflipx{} 来修正标签方向（因为使用了 xscale=-1）
-            ret += f"\\node[{pos}] at ({tx + dx_label:.1f},{ty + dy_label:.1f}) {{\\ctikzflipx{{${comp_label_main}_{{{int(label)}}}$}}}};\n"
+            # 确保文字不随节点旋转：使用 rotate=0 明确指定文字不旋转
+            # 直接使用普通文本节点，不应用任何翻转
+            ret += f"\\node[{pos}, rotate=0] at ({tx + dx_label:.1f},{ty + dy_label:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
             
             # 绘制引脚连线（MOSFET 使用 G, D, S）
             # CircuitTikZ 的 nmos 节点旋转规则与 npn 相同
@@ -838,6 +846,96 @@ def get_node_component_draw(x, y,
                     f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"grid_rules.py:710","message":"MOSFET pin connection result","data":{"orientation":orientation},"timestamp":int(__import__("time").time()*1000)}) + "\n")
             except: pass
             # #endregion
+            
+            return ret
+        
+        elif node_type == NODE_TYPE_MOSFET_P:
+            # P 沟道 MOSFET 处理（参考 PNP 的方式，根据 orientation 区分处理连接坐标）
+            if connections:
+                # 根据 orientation 区分处理 P-MOSFET 的连接坐标（类似 PNP）
+                # orientation: 0=up, 1=right, 2=down, 3=left
+                if orientation == 0:  # up
+                    gate_coord = connections.get('gate', (x-1, y+1))
+                    source_coord = connections.get('source', (x, y-1))
+                    drain_coord = connections.get('drain', (x, y+1))  # P-MOSFET: source 在下
+                elif orientation == 1:  # right
+                    gate_coord = connections.get('gate', (x, y+1))
+                    source_coord = connections.get('source', (x+1, y))
+                    drain_coord = connections.get('drain', (x-1, y))  # P-MOSFET: source 在右
+                elif orientation == 2:  # down
+                    gate_coord = connections.get('gate', (x+1, y))
+                    source_coord = connections.get('source', (x, y+1))
+                    drain_coord = connections.get('drain', (x, y-1))  # P-MOSFET: source 在上
+                elif orientation == 3:  # left
+                    gate_coord = connections.get('gate', (x, y-1))
+                    source_coord = connections.get('source', (x-1, y))
+                    drain_coord = connections.get('drain', (x+1, y))  # P-MOSFET: source 在左
+                else:  # fallback
+                    gate_coord = connections.get('gate', (x-1, y))
+                    source_coord = connections.get('source', (x, y-1))
+                    drain_coord = connections.get('drain', (x, y+1))
+            else:
+                # 如果没有 connections，使用默认坐标
+                drain_coord = (x, y+1)
+                gate_coord = (x-1, y)
+                source_coord = (x, y-1)
+            
+            dx, dy = drain_coord if drain_coord is not None else (x, y+1)
+            gx, gy = gate_coord if gate_coord is not None else (x-1, y)
+            sx, sy = source_coord if source_coord is not None else (x, y-1)
+            
+            tx, ty = x, y
+            rotation = orientation_map.get(orientation, 90)
+            
+            comp_type = "pmos"  # P 沟道 MOSFET
+            
+            ret = f"% P-MOSFET {comp_label_main}_{{{int(label)}}}\n"
+            # 参考 PNP 的处理方式：所有方向都使用 xscale=-1, yscale=-1
+            ret += f"\\node[{comp_type}, rotate={rotation}, xscale=-1, yscale=-1] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
+            
+            label_position = {0: "above", 1: "right", 2: "below", 3: "left"}
+            pos = label_position.get(orientation, "right")
+            if orientation == 0:
+                dx_label, dy_label = 0, 0.5
+            elif orientation == 1:
+                dx_label, dy_label = 0.5, 0
+            elif orientation == 2:
+                dx_label, dy_label = 0, -0.5
+            elif orientation == 3:
+                dx_label, dy_label = -0.5, 0
+            else:
+                dx_label, dy_label = 0.5, 0
+            
+            # 确保文字不随节点旋转：使用 rotate=0 明确指定文字不旋转
+            # 直接使用普通文本节点，不应用任何翻转
+            ret += f"\\node[{pos}, rotate=0] at ({tx + dx_label:.1f},{ty + dy_label:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
+            
+            ret += f"\\draw ({comp_label_main}{int(label)}.G) -- ({gx:.1f},{gy:.1f});\n"
+            
+            # 根据旋转角度动态调整连接逻辑（与 N 沟道相同）
+            if rotation == 0:
+                ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
+            elif rotation == 90:
+                if dx > sx:
+                    ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
+                    ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
+                else:
+                    ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({sx:.1f},{sy:.1f});\n"
+                    ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({dx:.1f},{dy:.1f});\n"
+            elif rotation == -90:
+                if dx < sx:
+                    ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
+                    ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
+                else:
+                    ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({sx:.1f},{sy:.1f});\n"
+                    ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({dx:.1f},{dy:.1f});\n"
+            elif rotation == 180:
+                ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({sx:.1f},{sy:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({dx:.1f},{dy:.1f});\n"
+            else:
+                ret += f"\\draw ({comp_label_main}{int(label)}.D) |- ({dx:.1f},{dy:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{int(label)}.S) |- ({sx:.1f},{sy:.1f});\n"
             
             return ret
         
@@ -1509,7 +1607,42 @@ class Circuit:
                         }
                         self.branches.append(new_branch)
                         add_order += 1
-                        print(f"Added MOSFET branch: {new_branch}")
+                        print(f"Added N-MOSFET branch: {new_branch}")
+                    
+                    elif node_type == NODE_TYPE_MOSFET_P:
+                        # P 沟道 MOSFET 支路：获取各引脚连接的等价节点（与 N 沟道相同逻辑）
+                        gate_node, drain_node, source_node = None, None, None
+                        orientation = self.node_comp_orientation[i][j]
+                        gate_dir = 'vertical' if orientation in [0, 2] else 'horizontal'
+                        ds_dir = 'horizontal' if orientation in [0, 2] else 'vertical'
+                        
+                        if connections:
+                            if 'gate' in connections:
+                                gi, gj = self._coord_to_grid(*connections['gate'])
+                                if gi is not None:
+                                    gate_node = self._get_node_name(gi, gj, gate_dir)
+                            if 'drain' in connections:
+                                di, dj = self._coord_to_grid(*connections['drain'])
+                                if di is not None:
+                                    drain_node = self._get_node_name(di, dj, ds_dir)
+                            if 'source' in connections:
+                                si, sj = self._coord_to_grid(*connections['source'])
+                                if si is not None:
+                                    source_node = self._get_node_name(si, sj, ds_dir)
+                        
+                        new_branch = {
+                            "type": node_type,
+                            "label": self.node_comp_label[i][j],
+                            "gate_node": gate_node,
+                            "drain_node": drain_node,
+                            "source_node": source_node,
+                            "orientation": orientation,
+                            "is_node_component": True,
+                            "order": add_order
+                        }
+                        self.branches.append(new_branch)
+                        add_order += 1
+                        print(f"Added P-MOSFET branch: {new_branch}")
                     
                     elif node_type in [NODE_TYPE_VCC, NODE_TYPE_VDD, NODE_TYPE_VSS, NODE_TYPE_VEE, NODE_TYPE_VBB]:
                         # 电源：连接到节点 0（地）
@@ -1617,9 +1750,16 @@ class Circuit:
                             model_name
                         )
                     elif br["type"] == NODE_TYPE_MOSFET:
-                        # MOSFET SPICE格式: M<name> <drain> <gate> <source> <body> <model>
-                        # 默认使用 NMOS 模型
+                        # N 沟道 MOSFET SPICE格式: M<name> <drain> <gate> <source> <body> <model>
                         spice_str += "M%s %s %s %s 0 NMOS_MODEL\n" % (
+                            int(br["label"]),
+                            br.get("drain_node", "0"),
+                            br.get("gate_node", "0"),
+                            br.get("source_node", "0")
+                        )
+                    elif br["type"] == NODE_TYPE_MOSFET_P:
+                        # P 沟道 MOSFET SPICE格式: M<name> <drain> <gate> <source> <body> <model>
+                        spice_str += "M%s %s %s %s 0 PMOS_MODEL\n" % (
                             int(br["label"]),
                             br.get("drain_node", "0"),
                             br.get("gate_node", "0"),
@@ -1764,6 +1904,7 @@ class Circuit:
                 has_npn = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_NPN for br in self.branches)
                 has_pnp = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_PNP for br in self.branches)
                 has_mosfet = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_MOSFET for br in self.branches)
+                has_mosfet_p = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_MOSFET_P for br in self.branches)
                 model_str = ""
                 if has_npn:
                     model_str += ".MODEL NPN_MODEL NPN\n"
@@ -1771,6 +1912,8 @@ class Circuit:
                     model_str += ".MODEL PNP_MODEL PNP\n"
                 if has_mosfet:
                     model_str += ".MODEL NMOS_MODEL NMOS\n"
+                if has_mosfet_p:
+                    model_str += ".MODEL PMOS_MODEL PMOS\n"
                 if model_str:
                     spice_str = model_str + spice_str
                 
@@ -1787,6 +1930,7 @@ class Circuit:
                 has_npn = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_NPN for br in self.branches)
                 has_pnp = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_TRANSISTOR_PNP for br in self.branches)
                 has_mosfet = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_MOSFET for br in self.branches)
+                has_mosfet_p = any(br.get('is_node_component') and br.get('type') == NODE_TYPE_MOSFET_P for br in self.branches)
                 model_str = ""
                 if has_npn:
                     model_str += ".MODEL NPN_MODEL NPN\n"
@@ -1794,6 +1938,8 @@ class Circuit:
                     model_str += ".MODEL PNP_MODEL PNP\n"
                 if has_mosfet:
                     model_str += ".MODEL NMOS_MODEL NMOS\n"
+                if has_mosfet_p:
+                    model_str += ".MODEL PMOS_MODEL PMOS\n"
                 if model_str:
                     spice_str = model_str + spice_str
                 

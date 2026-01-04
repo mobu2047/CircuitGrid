@@ -26,7 +26,7 @@ class PropertyPanel(ttk.Frame):
     """
     
     UNITS = ["", "k", "m", "μ", "n", "p"]
-    ORIENTATIONS = ["Up", "Right", "Down", "Left"]
+    ORIENTATIONS = ["Down", "Right", "Up", "Left"]
     
     def __init__(self, parent, model: GridModel, **kwargs):
         super().__init__(parent, **kwargs)
@@ -117,13 +117,21 @@ class PropertyPanel(ttk.Frame):
         self.node_type_combo.grid(row=0, column=1, padx=5, pady=2)
         self.node_type_combo.bind('<<ComboboxSelected>>', self._on_node_type_changed)
         
+        # 标签编号（类似边上元件）
+        ttk.Label(self.node_frame, text="Label:").grid(row=1, column=0, sticky='w', padx=5, pady=2)
+        self.node_label_var = tk.StringVar(value="0")
+        self.node_label_entry = ttk.Entry(self.node_frame, textvariable=self.node_label_var, width=8)
+        self.node_label_entry.grid(row=1, column=1, sticky='w', padx=5, pady=2)
+        self.node_label_entry.bind('<FocusOut>', self._on_node_label_changed)
+        self.node_label_entry.bind('<Return>', self._on_node_label_changed)
+        
         # 朝向
-        ttk.Label(self.node_frame, text="Orientation:").grid(row=1, column=0, sticky='w', padx=5, pady=2)
+        ttk.Label(self.node_frame, text="Orientation:").grid(row=2, column=0, sticky='w', padx=5, pady=2)
         self.node_orient_var = tk.StringVar(value="Right")
         self.node_orient_combo = ttk.Combobox(self.node_frame, textvariable=self.node_orient_var,
                                               state='readonly', width=10)
         self.node_orient_combo['values'] = self.ORIENTATIONS
-        self.node_orient_combo.grid(row=1, column=1, sticky='w', padx=5, pady=2)
+        self.node_orient_combo.grid(row=2, column=1, sticky='w', padx=5, pady=2)
         self.node_orient_combo.bind('<<ComboboxSelected>>', self._on_node_orient_changed)
         
         # 交叉点标记
@@ -131,12 +139,12 @@ class PropertyPanel(ttk.Frame):
         self.junction_check = ttk.Checkbutton(self.node_frame, text="Junction Marker",
                                               variable=self.junction_var,
                                               command=self._on_junction_changed)
-        self.junction_check.grid(row=2, column=0, columnspan=2, pady=5)
+        self.junction_check.grid(row=3, column=0, columnspan=2, pady=5)
         
         # 删除节点元件按钮
         self.delete_node_btn = ttk.Button(self.node_frame, text="Delete Component", 
                                           command=self._delete_node_component)
-        self.delete_node_btn.grid(row=3, column=0, columnspan=2, pady=10)
+        self.delete_node_btn.grid(row=4, column=0, columnspan=2, pady=10)
     
     def show_edge(self, direction: str, i: int, j: int):
         """显示边属性"""
@@ -181,6 +189,8 @@ class PropertyPanel(ttk.Frame):
             comp = get_node_component(data.comp_type)
             if comp:
                 self.node_type_var.set(comp.display_name)
+            # 显示 label（类似边上元件）
+            self.node_label_var.set(str(self.model.node_comp_label[i][j]))
             self.node_orient_combo.current(data.orientation)
         
         # 交叉点标记
@@ -306,9 +316,26 @@ class PropertyPanel(ttk.Frame):
         
         for comp in get_all_node_components():
             if comp.display_name == type_name:
+                try:
+                    label = int(self.node_label_var.get() or 0)
+                except ValueError:
+                    label = 0
                 self.model.set_node_component(i, j, comp.type_id,
+                                              label=label,
                                               orientation=self.ORIENTATIONS.index(self.node_orient_var.get()))
                 break
+    
+    def _on_node_label_changed(self, event=None):
+        """节点元件标签改变"""
+        if not self.current_node:
+            return
+        i, j = self.current_node
+        try:
+            label = int(self.node_label_var.get())
+        except ValueError:
+            label = 0
+        self.model.node_comp_label[i][j] = label
+        self.model._notify_observers()
     
     def _on_node_orient_changed(self, event=None):
         """节点元件朝向改变"""

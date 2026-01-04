@@ -150,47 +150,52 @@ def _register_default_components():
             color="#A29BFE", has_value=False, spice_prefix="U"
         ),
         ComponentConfig(
-            type_id=5, display_name="MOSFET", short_name="MOS",
+            type_id=5, display_name="N-MOSFET", short_name="NMOS",
             circuitikz_type="nmos", label_prefix="M", unit="",
             color="#E17055", has_value=False, spice_prefix="M"
         ),
         ComponentConfig(
-            type_id=6, display_name="GND", short_name="GND",
+            type_id=6, display_name="P-MOSFET", short_name="PMOS",
+            circuitikz_type="pmos", label_prefix="M", unit="",
+            color="#E17055", has_value=False, spice_prefix="M"
+        ),
+        ComponentConfig(
+            type_id=7, display_name="GND", short_name="GND",
             circuitikz_type="ground", label_prefix="GND", unit="",
             color="#000000", has_value=False
         ),
         ComponentConfig(
-            type_id=7, display_name="VCC", short_name="VCC",
+            type_id=8, display_name="VCC", short_name="VCC",
             circuitikz_type="vcc", label_prefix="VCC", unit="V",
             color="#FF6B6B", has_value=True
         ),
         ComponentConfig(
-            type_id=8, display_name="VDD", short_name="VDD",
+            type_id=9, display_name="VDD", short_name="VDD",
             circuitikz_type="vdd", label_prefix="VDD", unit="V",
             color="#FF6B6B", has_value=True
         ),
         ComponentConfig(
-            type_id=9, display_name="VSS", short_name="VSS",
+            type_id=10, display_name="VSS", short_name="VSS",
             circuitikz_type="vss", label_prefix="VSS", unit="V",
             color="#4ECDC4", has_value=True
         ),
         ComponentConfig(
-            type_id=10, display_name="VEE", short_name="VEE",
+            type_id=11, display_name="VEE", short_name="VEE",
             circuitikz_type="vee", label_prefix="VEE", unit="V",
             color="#4ECDC4", has_value=True
         ),
         ComponentConfig(
-            type_id=11, display_name="VBB", short_name="VBB",
+            type_id=12, display_name="VBB", short_name="VBB",
             circuitikz_type="vbb", label_prefix="VBB", unit="V",
             color="#FF6B6B", has_value=True
         ),
         ComponentConfig(
-            type_id=12, display_name="VIN", short_name="VIN",
+            type_id=13, display_name="VIN", short_name="VIN",
             circuitikz_type="", label_prefix="VIN", unit="V",
             color="#FF6B6B", has_value=True, spice_prefix="V"
         ),
         ComponentConfig(
-            type_id=13, display_name="VOUT", short_name="VOUT",
+            type_id=14, display_name="VOUT", short_name="VOUT",
             circuitikz_type="", label_prefix="VOUT", unit="V",
             color="#4ECDC4", has_value=True, spice_prefix="V"
         ),
