@@ -1,0 +1,44 @@
+\documentclass[border=5mm]{standalone}
+\usepackage{circuitikz}
+\begin{document}
+
+% Test PNP vs NPN with the SAME transforms
+% NPN works correctly, so let's verify PNP anchors
+
+\begin{circuitikz}[scale=1.2, transform shape]
+
+% Labels
+\node at (0, 4) {\textbf{NPN}};
+\node at (4, 4) {\textbf{PNP}};
+
+% Row labels
+\node at (-2, 3) {Up};
+\node at (-2, 1) {Right};
+
+% NPN Up: rotate=90, xscale=-1
+\node[npn, rotate=90, xscale=-1] (npn_up) at (0, 3) {};
+\node[above] at (npn_up.B) {B};
+\node[left] at (npn_up.C) {C};
+\node[right] at (npn_up.E) {E};
+
+% PNP Up: rotate=90, xscale=-1 (same as NPN)
+\node[pnp, rotate=90, xscale=-1] (pnp_up) at (4, 3) {};
+\node[above] at (pnp_up.B) {B};
+\node[left] at (pnp_up.C) {C};
+\node[right] at (pnp_up.E) {E};
+
+% NPN Right: xscale=-1
+\node[npn, xscale=-1] (npn_right) at (0, 1) {};
+\node[right] at (npn_right.B) {B};
+\node[above] at (npn_right.C) {C};
+\node[below] at (npn_right.E) {E};
+
+% PNP Right: xscale=-1 (same as NPN)
+\node[pnp, xscale=-1] (pnp_right) at (4, 1) {};
+\node[right] at (pnp_right.B) {B};
+\node[above] at (pnp_right.C) {C};
+\node[below] at (pnp_right.E) {E};
+
+\end{circuitikz}
+
+\end{document}

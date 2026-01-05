@@ -1,0 +1,125 @@
+\documentclass[border=5mm]{standalone}
+\usepackage{circuitikz}
+\begin{document}
+
+% Test all orientations for NPN, PNP, NMOS, PMOS
+% Each component is placed at specific coordinates for comparison
+% Grid: columns are orientations (Up, Right, Down, Left), rows are component types
+
+\begin{circuitikz}[scale=0.8, transform shape]
+
+% Row labels
+\node at (-2, 9) {NPN};
+\node at (-2, 6) {PNP};
+\node at (-2, 3) {NMOS};
+\node at (-2, 0) {PMOS};
+
+% Column labels
+\node at (0, 11) {Up};
+\node at (4, 11) {Right};
+\node at (8, 11) {Down};
+\node at (12, 11) {Left};
+
+% ========== NPN Row (y=9) ==========
+% Up (0): rotate=-90, xscale=-1
+\node[npn, rotate=-90, xscale=-1] (npn_up) at (0, 9) {};
+\draw (npn_up.B) -- ++(0, 1) node[above] {B};
+\draw (npn_up.C) -- ++(-1, 0) node[left] {C};
+\draw (npn_up.E) -- ++(1, 0) node[right] {E};
+
+% Right (1): xscale=-1
+\node[npn, xscale=-1] (npn_right) at (4, 9) {};
+\draw (npn_right.B) -- ++(1, 0) node[right] {B};
+\draw (npn_right.C) -- ++(0, 1) node[above] {C};
+\draw (npn_right.E) -- ++(0, -1) node[below] {E};
+
+% Down (2): rotate=90, xscale=-1
+\node[npn, rotate=90, xscale=-1] (npn_down) at (8, 9) {};
+\draw (npn_down.B) -- ++(0, -1) node[below] {B};
+\draw (npn_down.C) -- ++(1, 0) node[right] {C};
+\draw (npn_down.E) -- ++(-1, 0) node[left] {E};
+
+% Left (3): yscale=-1
+\node[npn, yscale=-1] (npn_left) at (12, 9) {};
+\draw (npn_left.B) -- ++(-1, 0) node[left] {B};
+\draw (npn_left.C) -- ++(0, -1) node[below] {C};
+\draw (npn_left.E) -- ++(0, 1) node[above] {E};
+
+% ========== PNP Row (y=6) ==========
+% Up (0): rotate=-90, xscale=-1
+\node[pnp, rotate=-90, xscale=-1] (pnp_up) at (0, 6) {};
+\draw (pnp_up.B) -- ++(0, 1) node[above] {B};
+\draw (pnp_up.C) -- ++(-1, 0) node[left] {C};
+\draw (pnp_up.E) -- ++(1, 0) node[right] {E};
+
+% Right (1): xscale=-1
+\node[pnp, xscale=-1] (pnp_right) at (4, 6) {};
+\draw (pnp_right.B) -- ++(1, 0) node[right] {B};
+\draw (pnp_right.C) -- ++(0, 1) node[above] {C};
+\draw (pnp_right.E) -- ++(0, -1) node[below] {E};
+
+% Down (2): rotate=90, xscale=-1
+\node[pnp, rotate=90, xscale=-1] (pnp_down) at (8, 6) {};
+\draw (pnp_down.B) -- ++(0, -1) node[below] {B};
+\draw (pnp_down.C) -- ++(1, 0) node[right] {C};
+\draw (pnp_down.E) -- ++(-1, 0) node[left] {E};
+
+% Left (3): yscale=-1
+\node[pnp, yscale=-1] (pnp_left) at (12, 6) {};
+\draw (pnp_left.B) -- ++(-1, 0) node[left] {B};
+\draw (pnp_left.C) -- ++(0, -1) node[below] {C};
+\draw (pnp_left.E) -- ++(0, 1) node[above] {E};
+
+% ========== NMOS Row (y=3) ==========
+% Up (0): rotate=-90, xscale=-1
+\node[nmos, rotate=-90, xscale=-1] (nmos_up) at (0, 3) {};
+\draw (nmos_up.G) -- ++(0, 1) node[above] {G};
+\draw (nmos_up.D) -- ++(-1, 0) node[left] {D};
+\draw (nmos_up.S) -- ++(1, 0) node[right] {S};
+
+% Right (1): xscale=-1
+\node[nmos, xscale=-1] (nmos_right) at (4, 3) {};
+\draw (nmos_right.G) -- ++(1, 0) node[right] {G};
+\draw (nmos_right.D) -- ++(0, 1) node[above] {D};
+\draw (nmos_right.S) -- ++(0, -1) node[below] {S};
+
+% Down (2): rotate=90, xscale=-1
+\node[nmos, rotate=90, xscale=-1] (nmos_down) at (8, 3) {};
+\draw (nmos_down.G) -- ++(0, -1) node[below] {G};
+\draw (nmos_down.D) -- ++(1, 0) node[right] {D};
+\draw (nmos_down.S) -- ++(-1, 0) node[left] {S};
+
+% Left (3): yscale=-1
+\node[nmos, yscale=-1] (nmos_left) at (12, 3) {};
+\draw (nmos_left.G) -- ++(-1, 0) node[left] {G};
+\draw (nmos_left.D) -- ++(0, -1) node[below] {D};
+\draw (nmos_left.S) -- ++(0, 1) node[above] {S};
+
+% ========== PMOS Row (y=0) ==========
+% Up (0): rotate=-90
+\node[pmos, rotate=-90] (pmos_up) at (0, 0) {};
+\draw (pmos_up.G) -- ++(0, 1) node[above] {G};
+\draw (pmos_up.D) -- ++(-1, 0) node[left] {D};
+\draw (pmos_up.S) -- ++(1, 0) node[right] {S};
+
+% Right (1): xscale=-1, yscale=-1
+\node[pmos, xscale=-1, yscale=-1] (pmos_right) at (4, 0) {};
+\draw (pmos_right.G) -- ++(1, 0) node[right] {G};
+\draw (pmos_right.D) -- ++(0, 1) node[above] {D};
+\draw (pmos_right.S) -- ++(0, -1) node[below] {S};
+
+% Down (2): rotate=90
+\node[pmos, rotate=90] (pmos_down) at (8, 0) {};
+\draw (pmos_down.G) -- ++(0, -1) node[below] {G};
+\draw (pmos_down.D) -- ++(1, 0) node[right] {D};
+\draw (pmos_down.S) -- ++(-1, 0) node[left] {S};
+
+% Left (3): no transform
+\node[pmos] (pmos_left) at (12, 0) {};
+\draw (pmos_left.G) -- ++(-1, 0) node[left] {G};
+\draw (pmos_left.D) -- ++(0, -1) node[below] {D};
+\draw (pmos_left.S) -- ++(0, 1) node[above] {S};
+
+\end{circuitikz}
+
+\end{document}

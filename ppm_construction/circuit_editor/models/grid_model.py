@@ -190,13 +190,14 @@ class GridModel:
             self.node_comp_label[i][j] = label
             self.node_comp_orientation[i][j] = orientation
             
-            # 取消自动连线：不再自动设置引脚连接，由用户手动连线
-            # if comp_type in [1, 2]:  # NPN=1, PNP=2
-            #     connections = self._auto_connect_transistor(i, j, orientation)
-            # elif comp_type == 5:  # MOSFET=5
-            #     connections = self._auto_connect_mosfet(i, j, orientation)
             
-            self.node_comp_connections[i][j] = connections  # 保持为 None 或用户手动设置的 connections
+            # 自动连线：根据朝向设置引脚连接
+            if comp_type in [1, 2]:  # NPN=1, PNP=2
+                connections = self._auto_connect_transistor(i, j, orientation)
+            elif comp_type == 5 or comp_type == 6:  # MOSFET=5, P-MOSFET=6
+                connections = self._auto_connect_mosfet(i, j, orientation)
+            
+            self.node_comp_connections[i][j] = connections 
             self._notify_observers()
     
     def _auto_connect_transistor(self, i: int, j: int, orientation: int) -> Dict:

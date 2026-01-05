@@ -1,0 +1,65 @@
+\documentclass[border=5mm]{standalone}
+\usepackage{circuitikz}
+\begin{document}
+
+% Simple test: Just show NMOS with different transforms, no connections
+% This helps us understand what each transform does to the component
+
+\begin{circuitikz}[scale=1.2, transform shape]
+
+% Labels
+\node at (0, 5) {\textbf{DEFAULT}};
+\node at (3, 5) {\textbf{rotate=-90}};
+\node at (6, 5) {\textbf{rotate=90}};
+\node at (9, 5) {\textbf{xscale=-1}};
+\node at (12, 5) {\textbf{yscale=-1}};
+
+\node at (0, 2.5) {\textbf{r=-90,x=-1}};
+\node at (3, 2.5) {\textbf{r=90,x=-1}};
+\node at (6, 2.5) {\textbf{x=-1,y=-1}};
+
+% Row 1: Basic transforms
+\node[nmos] (n1) at (0, 4) {};
+\node[above] at (n1.G) {G};
+\node[above] at (n1.D) {D};
+\node[below] at (n1.S) {S};
+
+\node[nmos, rotate=-90] (n2) at (3, 4) {};
+\node[above] at (n2.G) {G};
+\node[right] at (n2.D) {D};
+\node[left] at (n2.S) {S};
+
+\node[nmos, rotate=90] (n3) at (6, 4) {};
+\node[below] at (n3.G) {G};
+\node[left] at (n3.D) {D};
+\node[right] at (n3.S) {S};
+
+\node[nmos, xscale=-1] (n4) at (9, 4) {};
+\node[above] at (n4.G) {G};
+\node[above] at (n4.D) {D};
+\node[below] at (n4.S) {S};
+
+\node[nmos, yscale=-1] (n5) at (12, 4) {};
+\node[above] at (n5.G) {G};
+\node[below] at (n5.D) {D};
+\node[above] at (n5.S) {S};
+
+% Row 2: Combined transforms
+\node[nmos, rotate=-90, xscale=-1] (n6) at (0, 1) {};
+\node[above] at (n6.G) {G};
+\node[left] at (n6.D) {D};
+\node[right] at (n6.S) {S};
+
+\node[nmos, rotate=90, xscale=-1] (n7) at (3, 1) {};
+\node[below] at (n7.G) {G};
+\node[right] at (n7.D) {D};
+\node[left] at (n7.S) {S};
+
+\node[nmos, xscale=-1, yscale=-1] (n8) at (6, 1) {};
+\node[above] at (n8.G) {G};
+\node[below] at (n8.D) {D};
+\node[above] at (n8.S) {S};
+
+\end{circuitikz}
+
+\end{document}

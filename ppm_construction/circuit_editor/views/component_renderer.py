@@ -377,8 +377,8 @@ def draw_npn(canvas, x, y, orientation, color, scale, label, cell_size=80):
     
     # 根据朝向计算旋转（与 LaTeX 相反：左右方向相反，上下方向相反）
     # LaTeX: 0=up(90°), 1=right(0°), 2=down(-90°), 3=left(180°)
-    # Tkinter: 0=up(-90°), 1=right(180°), 2=down(90°), 3=left(0°)
-    angles = {0: -90, 1: 180, 2: 90, 3: 0}
+    # Tkinter: 0=up(-90°), 1=right(0°), 2=down(90°), 3=left(180°)
+    angles = {0: -90, 1: 0, 2: 90, 3: 180}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):
@@ -445,7 +445,7 @@ def draw_pnp(canvas, x, y, orientation, color, scale, label, cell_size=80):
     lead_len = cell_size / 2
     
     # 与 LaTeX 相反：左右方向相反，上下方向相反
-    angles = {0: -90, 1: 180, 2: 90, 3: 0}
+    angles = {0: -90, 1: 0, 2: 90, 3: 180}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):
@@ -508,7 +508,7 @@ def draw_diode(canvas, x, y, orientation, color, scale, label, cell_size=80):
     lead_len = 15 * scale
     
     # 与 LaTeX 相反：左右方向相反，上下方向相反
-    angles = {0: -90, 1: 180, 2: 90, 3: 0}
+    angles = {0: -90, 1: 0, 2: 90, 3: 180}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):
@@ -554,7 +554,7 @@ def draw_opamp(canvas, x, y, orientation, color, scale, label, cell_size=80):
     lead_len = 15 * scale
     
     # 与 LaTeX 相反：左右方向相反，上下方向相反
-    angles = {0: -90, 1: 180, 2: 90, 3: 0}
+    angles = {0: -90, 1: 0, 2: 90, 3: 180}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):
@@ -603,7 +603,7 @@ def draw_mosfet(canvas, x, y, orientation, color, scale, label, cell_size=80):
     body_r = 15 * scale
     lead_len = cell_size / 2
     
-    angles = {0: -90, 1: 180, 2: 90, 3: 0}
+    angles = {0: -90, 1: 0, 2: 90, 3: 180}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):
@@ -664,7 +664,7 @@ def draw_mosfet_p(canvas, x, y, orientation, color, scale, label, cell_size=80):
     body_r = 15 * scale
     lead_len = cell_size / 2
     
-    angles = {0: -90, 1: 180, 2: 90, 3: 0}
+    angles = {0: -90, 1: 0, 2: 90, 3: 180}
     angle = math.radians(angles.get(orientation, 0))
     
     def rotate(px, py):
