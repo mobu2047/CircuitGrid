@@ -13,6 +13,8 @@ import os
 # 添加父目录以导入 grid_rules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+TYPE_SHORT = 0
+
 
 @dataclass
 class EdgeData:
@@ -100,7 +102,7 @@ class GridModel:
                 self.hcomp_type[i][j] = 0
                 self.hcomp_label[i][j] = 0
                 self.hcomp_value[i][j] = 0
-            self._notify_observers()
+            self.notify_update()
             return True
         return False
     
@@ -112,7 +114,7 @@ class GridModel:
                 self.vcomp_type[i][j] = 0
                 self.vcomp_label[i][j] = 0
                 self.vcomp_value[i][j] = 0
-            self._notify_observers()
+            self.notify_update()
             return True
         return False
     
@@ -129,7 +131,7 @@ class GridModel:
             self.hcomp_value_unit[i][j] = value_unit
             self.hcomp_direction[i][j] = direction
             print(f"[DEBUG] After set: hcomp_type[{i}][{j}] = {self.hcomp_type[i][j]}")
-            self._notify_observers()
+            self.notify_update()
     
     def set_vedge_component(self, i: int, j: int, comp_type: int,
                            label: int = 0, value: int = 0,
@@ -144,7 +146,7 @@ class GridModel:
             self.vcomp_value_unit[i][j] = value_unit
             self.vcomp_direction[i][j] = direction
             print(f"[DEBUG] After set: vcomp_type[{i}][{j}] = {self.vcomp_type[i][j]}")
-            self._notify_observers()
+            self.notify_update()
     
     def get_hedge_data(self, i: int, j: int) -> Optional[EdgeData]:
         """获取水平边数据"""
@@ -198,7 +200,7 @@ class GridModel:
                 connections = self._auto_connect_mosfet(i, j, orientation)
             
             self.node_comp_connections[i][j] = connections 
-            self._notify_observers()
+            self.notify_update()
     
     def _auto_connect_transistor(self, i: int, j: int, orientation: int) -> Dict:
         """
@@ -279,6 +281,131 @@ class GridModel:
                 connections[pin_name] = (phys_x, phys_y)
         
         return connections
+
+    def get_pin_node(self, i: int, j: int, pin_name: str) -> Optional[Tuple[int, int]]:
+        """获取元件引脚对应的网格节点坐标"""
+        if not (0 <= i < self.m and 0 <= j < self.n):
+            return i, j
+            
+        comp_type = self.node_comp_type[i][j]
+        orientation = self.node_comp_orientation[i][j]
+        
+        pin_dirs = {}
+        
+        # NPN/PNP
+        if comp_type in [1, 2]:
+            if orientation == 0:  # up
+                pin_dirs = {'base': (-1, 0), 'collector': (0, -1), 'emitter': (0, 1)}
+            elif orientation == 1:  # right
+                pin_dirs = {'base': (0, 1), 'collector': (-1, 0), 'emitter': (1, 0)}
+            elif orientation == 2:  # down
+                pin_dirs = {'base': (1, 0), 'collector': (0, 1), 'emitter': (0, -1)}
+            else:  # left
+                pin_dirs = {'base': (0, -1), 'collector': (1, 0), 'emitter': (-1, 0)}
+                
+        # MOSFET
+        elif comp_type in [5, 6]:
+            if orientation == 0:  # up
+                pin_dirs = {'gate': (-1, 0), 'drain': (0, -1), 'source': (0, 1)}
+            elif orientation == 1:  # right
+                pin_dirs = {'gate': (0, 1), 'drain': (-1, 0), 'source': (1, 0)}
+            elif orientation == 2:  # down
+                pin_dirs = {'gate': (1, 0), 'drain': (0, 1), 'source': (0, -1)}
+            else:  # left
+                pin_dirs = {'gate': (0, -1), 'drain': (1, 0), 'source': (-1, 0)}
+        
+        if pin_name in pin_dirs:
+            di, dj = pin_dirs[pin_name]
+            ni, nj = i + di, j + dj
+            if 0 <= ni < self.m and 0 <= nj < self.n:
+                return ni, nj
+        
+        return i, j  # Default to center for others or unknown pins
+
+    def add_wire_path(self, start_i: int, start_j: int, end_i: int, end_j: int):
+        """
+        在两点之间添加物理导线（创建 TYPE_SHORT 短路边）
+        使用 L 型路由，根据端点连接情况优先选择方向
+        """ 
+        valid_start = (0 <= start_i < self.m and 0 <= start_j < self.n)
+        valid_end = (0 <= end_i < self.m and 0 <= end_j < self.n)
+        if not valid_start or not valid_end:
+            return
+
+        # Check alignment requirements
+        start_v = False
+        end_v = False
+        
+        def check_v_align(i, j):
+            # Check if (i, j) connects vertically to a transistor neighbor
+            for di, dj in [(-1, 0), (1, 0)]:
+                ni, nj = i + di, j
+                if 0 <= ni < self.m: # di varies i, j constant
+                    t = self.node_comp_type[ni][j]
+                    if t in [1, 2, 5, 6]:
+                        # Check all pins
+                        pins = ['base', 'collector', 'emitter'] if t <= 2 else ['gate', 'drain', 'source']
+                        for p in pins:
+                            if self.get_pin_node(ni, j, p) == (i, j):
+                                return True
+            return False
+
+        if check_v_align(start_i, start_j):
+            start_v = True
+        if check_v_align(end_i, end_j):
+            end_v = True
+            
+        # Decision: Prefer V-First if Start needs V.
+        # If End needs V, Prefer H-First (so last segment is V).
+        v_first = False
+        if start_v:
+            v_first = True
+        elif end_v:
+            v_first = False
+            
+        if v_first:
+            # Vertical First: (start_i, start_j) -> (end_i, start_j) -> (end_i, end_j)
+            
+            # 1. Vertical Segment (fix col=start_j)
+            step_i = 1 if end_i > start_i else -1
+            if start_i != end_i:
+                for i in range(start_i, end_i, step_i):
+                    edge_i = i if step_i > 0 else i-1
+                    if 0 <= edge_i < self.m - 1:
+                        self.has_vedge[edge_i][start_j] = 1
+                        self.vcomp_type[edge_i][start_j] = TYPE_SHORT
+            
+            # 2. Horizontal Segment (fix row=end_i)
+            step_j = 1 if end_j > start_j else -1
+            if start_j != end_j:
+                for j in range(start_j, end_j, step_j):
+                    edge_j = j if step_j > 0 else j-1
+                    if 0 <= edge_j < self.n - 1:
+                        self.has_hedge[end_i][edge_j] = 1
+                        self.hcomp_type[end_i][edge_j] = TYPE_SHORT
+                        
+        else:
+            # Horizontal First (Original Logic): (start_i, start_j) -> (start_i, end_j) -> (end_i, end_j)
+            
+            # 1. Horizontal Segment (fix row=start_i)
+            step_j = 1 if end_j > start_j else -1
+            if start_j != end_j:
+                for j in range(start_j, end_j, step_j):
+                    edge_j = j if step_j > 0 else j-1
+                    if 0 <= edge_j < self.n - 1:
+                        self.has_hedge[start_i][edge_j] = 1
+                        self.hcomp_type[start_i][edge_j] = TYPE_SHORT
+            
+            # 2. Vertical Segment (fix col=end_j)
+            step_i = 1 if end_i > start_i else -1
+            if start_i != end_i:
+                for i in range(start_i, end_i, step_i):
+                    edge_i = i if step_i > 0 else i-1
+                    if 0 <= edge_i < self.m - 1:
+                        self.has_vedge[edge_i][end_j] = 1
+                        self.vcomp_type[edge_i][end_j] = TYPE_SHORT
+
+        self.notify_update()
     
     def get_node_data(self, i: int, j: int) -> Optional[NodeData]:
         """获取节点元件数据"""
@@ -299,7 +426,7 @@ class GridModel:
         """切换交叉点标记"""
         if 0 <= i < self.m and 0 <= j < self.n:
             self.junction_marker[i][j] = 1 - self.junction_marker[i][j]
-            self._notify_observers()
+            self.notify_update()
             return True
         return False
     
@@ -316,7 +443,7 @@ class GridModel:
         if callback in self._observers:
             self._observers.remove(callback)
     
-    def _notify_observers(self):
+    def notify_update(self):
         """通知所有观察者"""
         for callback in self._observers:
             callback()
@@ -473,4 +600,4 @@ class GridModel:
                 self.vcomp_label[i][j] = old_data["vcomp_label"][i][j]
                 self.vcomp_value[i][j] = old_data["vcomp_value"][i][j]
         
-        self._notify_observers()
+        self.notify_update()

@@ -65,6 +65,10 @@ class GridCanvas(tk.Canvas):
         self.drop_target: Optional[Tuple[str, int, int]] = None  # ('h'/'v', i, j) or None
         self.drop_component: Optional[Tuple[bool, int]] = None  # (is_edge, type_id)
         
+        # 任意连线状态
+        self.dragging_wire_start: Optional[Tuple[int, int]] = None
+        self.wire_target: Optional[Tuple[int, int]] = None
+
         # 待放置元件（从元件库选择后，点击放置）
         self.pending_component: Optional[Tuple[bool, int]] = None  # (is_edge, type_id)
         self.on_component_placed: Optional[Callable] = None  # 放置完成回调
@@ -219,17 +223,7 @@ class GridCanvas(tk.Canvas):
             # 不清除 pending_component，允许连续放置
             return
         
-        # 检测节点
-        node = self._find_nearest_node(x, y)
-        if node:
-            self.selected_node = node
-            self.selected_edge = None
-            if self.on_node_selected:
-                self.on_node_selected(*node)
-            self.redraw()
-            return
-        
-        # 检测边（_find_nearest_edge 只返回已存在的边）
+        # 检测边（优先于节点背景，便于操作）
         edge = self._find_nearest_edge(x, y)
         if edge:
             self.selected_edge = edge
@@ -237,7 +231,20 @@ class GridCanvas(tk.Canvas):
             if self.on_edge_selected:
                 self.on_edge_selected(*edge)
             self.redraw()
-    
+            return
+        
+        # 检测节点（作为任意连线的起点 或 选择）
+        node = self._find_nearest_node(x, y)
+        if node:
+            # 记录可能的连线起点
+            self.dragging_wire_start = node
+            self.wire_target = node  # 初始目标为自己
+            self.selected_node = node
+            self.selected_edge = None
+            # 不立即触发选择回调，等 release 确认没有拖拽时再触发（或者无所谓，选择和连线不冲突）
+            self.redraw()
+            return
+
     def _on_right_click(self, event):
         """右键点击：取消放置模式 / 切换边/交叉点"""
         # 优先处理：取消待放置元件
@@ -269,38 +276,77 @@ class GridCanvas(tk.Canvas):
         """拖动事件"""
         x, y = event.x, event.y
         
-        # 如果正在拖动引脚
+        # 1. 引脚拖动
         if self.dragging_pin:
-            # 删除旧的拖拽线（通过标签）
             self.delete("pin_drag_line")
             self.delete("pin_target_highlight")
             
-            # 更新目标节点
             self.pin_target = self._find_nearest_node(x, y)
             
-            # 绘制新的拖拽线
             i, j, pin_name = self.dragging_pin
+            
+            # 智能防吸附：如果目标节点是引脚本身的逻辑邻居，则视为未选中
+            # 让用户感觉连线是从引脚自由出发，而不是立即吸附到旁边的网格点
+            if self.pin_target:
+                logical_neighbor = self.model.get_pin_node(i, j, pin_name)
+                if logical_neighbor and self.pin_target == logical_neighbor:
+                    self.pin_target = None
+
             if (i, j) in self.pin_positions and pin_name in self.pin_positions[(i, j)]:
                 px, py = self.pin_positions[(i, j)][pin_name]
                 
                 if self.pin_target:
                     tx, ty = self._grid_to_canvas(*self.pin_target)
-                    # 高亮目标节点
                     self.create_oval(tx - 12, ty - 12, tx + 12, ty + 12,
                                    outline=self.DROP_HIGHLIGHT, width=3,
                                    tags="pin_target_highlight")
-                    # 连线到目标
+                    # 使用直角走线预览 (H-V, 匹配 add_wire_path)
                     self.create_line(px, py, tx, py, tx, ty,
                                    fill=self.PIN_HIGHLIGHT, width=2,
                                    tags="pin_drag_line")
                 else:
-                    # 连线到鼠标
-                    self.create_line(px, py, x, py, x, y,
+                    self.create_line(px, py, x, y,
                                    fill=self.PIN_HIGHLIGHT, width=2, dash=(4, 2),
                                    tags="pin_drag_line")
             return
         
-        # 如果有拖放的元件，更新预览位置
+        # 2. 任意连线拖动
+        if self.dragging_wire_start:
+            self.delete("wire_drag_line")
+            self.delete("wire_target_highlight")
+            
+            self.wire_target = self._find_nearest_node(x, y)
+            
+            # 起点坐标
+            si, sj = self.dragging_wire_start
+            sx, sy = self._grid_to_canvas(si, sj)
+            
+            if self.wire_target and self.wire_target != self.dragging_wire_start:
+                ti, tj = self.wire_target
+                tx, ty = self._grid_to_canvas(ti, tj)
+                
+                # 高亮目标
+                self.create_oval(tx - 10, ty - 10, tx + 10, ty + 10,
+                               outline=self.DROP_HIGHLIGHT, width=2,
+                               tags="wire_target_highlight")
+                
+                # 绘制 L 型走线预览 (优先水平再垂直，与 add_wire_path 一致)
+                # 路径: (sx, sy) -> (tx, sy) -> (tx, ty)  (先水平，再垂直? add_wire_path 里是先水平再垂直)
+                # add_wire_path: 
+                #   1. col from start_j to end_j (fixed row=start_i) -> 走水平线 (si, sj) -> (si, tj)
+                #   2. row from start_i to end_i (fixed col=end_j)   -> 走垂直线 (si, tj) -> (ti, tj)
+                # 对应的画面坐标路径是: (sx, sy) -> (tx, sy) -> (tx, ty)
+                
+                self.create_line(sx, sy, tx, sy, tx, ty,
+                               fill=self.PIN_HIGHLIGHT, width=3,
+                               tags="wire_drag_line")
+            else:
+                 self.create_line(sx, sy, x, y,
+                               fill=self.PIN_HIGHLIGHT, width=2, dash=(4, 2),
+                               tags="wire_drag_line")
+            return
+
+        # 3. 元件拖放
         if self.drop_component:
             is_edge, type_id = self.drop_component
             if is_edge:
@@ -354,29 +400,56 @@ class GridCanvas(tk.Canvas):
         """释放鼠标"""
         x, y = event.x, event.y
         
-        # 完成引脚连接
+        # 1. 完成引脚连接
         if self.dragging_pin:
             if self.pin_target:
                 i, j, pin_name = self.dragging_pin
                 ti, tj = self.pin_target
                 
-                # 更新连接
-                connections = self.model.node_comp_connections[i][j] or {}
-                target_x = self.model.horizontal_dis[tj]
-                target_y = self.model.vertical_dis[ti]
-                connections[pin_name] = (target_x, target_y)
-                self.model.node_comp_connections[i][j] = connections
-                
+                # 2. 生成物理导线 (网格走线)
+                # 获取引脚的起始网格坐标
+                if (i, j) in self.pin_positions and pin_name in self.pin_positions[(i, j)]:
+                    # 获取引脚对应的逻辑网格节点（相邻节点）
+                    pin_node = self.model.get_pin_node(i, j, pin_name)
+                    if pin_node:
+                        pi, pj = pin_node
+                        self.model.add_wire_path(pi, pj, ti, tj)
+
                 if self.on_pin_connected:
                     self.on_pin_connected(i, j, pin_name, ti, tj)
-                
-                self.model._notify_observers()
             
-            # 清除拖拽线
+            # 清除拖拽线和状态
             self.delete("pin_drag_line")
             self.delete("pin_target_highlight")
+            self.dragging_pin = None
+            self.pin_target = None
+            self.selected_node = None  # 连线结束，取消选择
+            return
+
+        # 2. 完成任意连线
+        if self.dragging_wire_start:
+            if self.wire_target and self.wire_target != self.dragging_wire_start:
+                si, sj = self.dragging_wire_start
+                ti, tj = self.wire_target
+                # 生成物理导线
+                self.model.add_wire_path(si, sj, ti, tj)
+                self.selected_node = None  # 连线结束，取消选择
+                
+            else:
+                # 如果没有拖动或拖回起点，视为点击选择
+                if self.selected_node:
+                    if self.on_node_selected:
+                        self.on_node_selected(*self.selected_node)
+            
+            # 清除拖拽线和状态
+            self.delete("wire_drag_line")
+            self.delete("wire_target_highlight")
+            self.dragging_wire_start = None
+            self.wire_target = None
+            self.redraw()
+            return
         
-        # 完成元件拖放
+        # 3. 完成元件拖放
         if self.drop_component and self.drop_target:
             is_edge, type_id = self.drop_component
             if is_edge and self.drop_target[0] in ('h', 'v'):
@@ -389,9 +462,7 @@ class GridCanvas(tk.Canvas):
                 _, i, j = self.drop_target
                 self.model.set_node_component(i, j, type_id)
         
-        # 清除状态
-        self.dragging_pin = None
-        self.pin_target = None
+        # 清除其他状态
         self.drop_target = None
         self.drop_component = None
         self.redraw()
@@ -461,44 +532,108 @@ class GridCanvas(tk.Canvas):
     
     def _draw_single_edge(self, direction: str, i: int, j: int):
         """绘制单条边（使用 ComponentRenderer）"""
+        comp_type = 0
+        label = 0
+        value = 0
+        value_unit = 0
+        comp_direction = 0
+        
+        target_i, target_j = (i, j + 1) if direction == 'h' else (i + 1, j)
+        
         if direction == 'h':
-            x1, y1 = self._grid_to_canvas(i, j)
-            x2, y2 = self._grid_to_canvas(i, j + 1)
             comp_type = self.model.hcomp_type[i][j]
             label = self.model.hcomp_label[i][j]
             value = self.model.hcomp_value[i][j]
             value_unit = self.model.hcomp_value_unit[i][j]
             comp_direction = self.model.hcomp_direction[i][j]
         else:
-            x1, y1 = self._grid_to_canvas(i, j)
-            x2, y2 = self._grid_to_canvas(i + 1, j)
             comp_type = self.model.vcomp_type[i][j]
             label = self.model.vcomp_label[i][j]
             value = self.model.vcomp_value[i][j]
             value_unit = self.model.vcomp_value_unit[i][j]
             comp_direction = self.model.vcomp_direction[i][j]
+
+        x1, y1 = self._grid_to_canvas(i, j)
+        x2, y2 = self._grid_to_canvas(target_i, target_j)
+
+        # Wire Extension Logic for Transistors
+        # 视觉修复：填补 Pin Tip 和 Neighbor 之间的空隙
+        # 关键修复：防止出现斜线 (Diagonal)
+        # 如果导线方向与引脚方向平行，则延伸导线（无缝连接）
+        # 如果导线方向与引脚方向垂直，则绘制额外的拐角线段 (Corner Segment)，保持正交
+        offset = self.CELL_SIZE / 2
+        
+        # Check Start Node (i, j)
+        for di, dj in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            ni, nj = i + di, j + dj
+            if 0 <= ni < self.model.m and 0 <= nj < self.model.n:
+                t = self.model.node_comp_type[ni][nj]
+                if t in [1, 2, 5, 6]:
+                    pins = ['base', 'collector', 'emitter'] if t <= 2 else ['gate', 'drain', 'source']
+                    found = False
+                    for p in pins:
+                        if self.model.get_pin_node(ni, nj, p) == (i, j):
+                            # Vector from Node to Pin Tip
+                            vx = (nj - j) * offset
+                            vy = (ni - i) * offset
+                            
+                            if direction == 'h':
+                                if abs(vy) < 0.01: # Aligned (Horizontal Pin, Horizontal Wire)
+                                    x1 += vx
+                                else: # Misaligned (Vertical Pin, Horizontal Wire) -> Draw Corner
+                                    self.create_line(x1, y1, x1+vx, y1+vy, fill=self.EDGE_COLOR, width=2)
+                            else: # v
+                                if abs(vx) < 0.01: # Aligned (Vertical Pin, Vertical Wire)
+                                    y1 += vy
+                                else: # Misaligned (Horizontal Pin, Vertical Wire) -> Draw Corner
+                                    self.create_line(x1, y1, x1+vx, y1+vy, fill=self.EDGE_COLOR, width=2)
+                            
+                            found = True
+                            break
+                    if found: break
+        
+        # Check End Node (target_i, target_j)
+        for di, dj in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            ni, nj = target_i + di, target_j + dj
+            if 0 <= ni < self.model.m and 0 <= nj < self.model.n:
+                t = self.model.node_comp_type[ni][nj]
+                if t in [1, 2, 5, 6]:
+                    pins = ['base', 'collector', 'emitter'] if t <= 2 else ['gate', 'drain', 'source']
+                    found = False
+                    for p in pins:
+                        if self.model.get_pin_node(ni, nj, p) == (target_i, target_j):
+                            # Vector from Node to Pin Tip
+                            vx = (nj - target_j) * offset
+                            vy = (ni - target_i) * offset
+                            
+                            if direction == 'h':
+                                if abs(vy) < 0.01: # Aligned
+                                    x2 += vx
+                                else: # Misaligned
+                                    self.create_line(x2, y2, x2+vx, y2+vy, fill=self.EDGE_COLOR, width=2)
+                            else: # v
+                                if abs(vx) < 0.01: # Aligned
+                                    y2 += vy
+                                else: # Misaligned
+                                    self.create_line(x2, y2, x2+vx, y2+vy, fill=self.EDGE_COLOR, width=2)
+
+                            found = True
+                            break
+                    if found: break
         
         comp_config = get_edge_component(int(comp_type))
         color = comp_config.color if comp_config else self.EDGE_COLOR
         
-        # 构建标签文本：包含标签、数值和单位
+        # 构建标签文本
         label_text = ""
         if comp_config:
-            # 单位前缀映射
             unit_prefixes = ["", "k", "m", "μ", "n", "p"]
             unit_prefix = unit_prefixes[value_unit] if value_unit < len(unit_prefixes) else ""
-            
-            # 构建完整标签
             parts = []
-            if label:
-                parts.append(f"{comp_config.label_prefix}{label}")
+            if label: parts.append(f"{comp_config.label_prefix}{label}")
             if value > 0:
                 value_str = f"{value}{unit_prefix}" if unit_prefix else str(value)
-                if comp_config.unit:
-                    parts.append(f"{value_str}{comp_config.unit}")
-                else:
-                    parts.append(value_str)
-            
+                parts.append(f"{value_str}{comp_config.unit}" if comp_config.unit else value_str)
             label_text = " ".join(parts)
         
         ComponentRenderer.draw_edge_component(
@@ -530,7 +665,6 @@ class GridCanvas(tk.Canvas):
                     if pins:
                         self.pin_positions[(i, j)] = pins
                         self._draw_pins(i, j, pins)
-                        self._draw_pin_connections(i, j, pins)
     
     def _draw_pins(self, i: int, j: int, pins: Dict[str, Tuple[float, float]]):
         """绘制引脚圆点（可拖动）"""
