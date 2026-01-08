@@ -127,6 +127,60 @@ def draw_short(canvas, x1, y1, x2, y2, color, scale, label, direction=0):
     canvas.create_line(x1, y1, x2, y2, fill=color, width=2*scale)
 
 
+@ComponentRenderer.register_edge(11)  # TYPE_DIODE
+def draw_diode_edge(canvas, x1, y1, x2, y2, color, scale, label, direction=0):
+    """
+    二极管 (边上元件)
+    direction=0: 阳极(Anode) -> 阴极(Cathode)，即顺着电流方向
+    direction=1: 阴极(Cathode) -> 阳极(Anode)，即逆着电流方向
+    """
+    mx, my = (x1+x2)/2, (y1+y2)/2
+    size = 8 * scale  # 半大小
+    
+    # 计算角度
+    angle = math.atan2(y2-y1, x2-x1)
+    if direction == 1:
+        angle += math.pi
+        
+    cos_a = math.cos(angle)
+    sin_a = math.sin(angle)
+    
+    def rotate_point(px, py):
+        # 旋转并平移到中心
+        return mx + px*cos_a - py*sin_a, my + px*sin_a + py*cos_a
+
+    # 二极管图形定义 (以中心为原点，假设向右)
+    # 阳极引线 (左侧)
+    # 阴极引线 (右侧)
+    # 三角形: (-size, -size) -> (-size, size) -> (size, 0)
+    # 竖线: (size, -size) -> (size, size)
+    
+    # 绘制连接线
+    # 计算图形占用的长度，避免线画入图形内部
+    # 图形长度 approx size=8*scale. 16*scale total width.
+    gap = size
+    
+    canvas.create_line(x1, y1, mx - gap*cos_a, my - gap*sin_a, fill=color, width=2*scale)
+    canvas.create_line(mx + gap*cos_a, my + gap*sin_a, x2, y2, fill=color, width=2*scale)
+
+    # 绘制三角形
+    p1 = rotate_point(-size, -size)
+    p2 = rotate_point(-size, size)
+    p3 = rotate_point(size, 0)
+    canvas.create_polygon(*p1, *p2, *p3, outline=color, fill='', width=2*scale)
+    
+    # 绘制阴极竖线
+    l1 = rotate_point(size, -size)
+    l2 = rotate_point(size, size)
+    canvas.create_line(*l1, *l2, fill=color, width=2*scale)
+    
+    # 标签
+    if label:
+        tx, ty = rotate_point(0, -size-10)
+        canvas.create_text(tx, ty, text=label, fill=color, font=("Arial", 9))
+
+
+
 @ComponentRenderer.register_edge(1)  # TYPE_VOLTAGE_SOURCE
 def draw_voltage_source(canvas, x1, y1, x2, y2, color, scale, label, direction=0):
     """
@@ -501,49 +555,7 @@ def draw_pnp(canvas, x, y, orientation, color, scale, label, cell_size=80):
     }
 
 
-@ComponentRenderer.register_node(3)  # NODE_TYPE_DIODE
-def draw_diode(canvas, x, y, orientation, color, scale, label, cell_size=80):
-    """二极管"""
-    size = 12 * scale
-    lead_len = 15 * scale
-    
-    # 与 LaTeX 相反：左右方向相反，上下方向相反
-    angles = {0: -90, 1: 0, 2: 90, 3: 180}
-    angle = math.radians(angles.get(orientation, 0))
-    
-    def rotate(px, py):
-        cos_a, sin_a = math.cos(angle), math.sin(angle)
-        return x + px*cos_a - py*sin_a, y + px*sin_a + py*cos_a
-    
-    # 阳极引线
-    ax1, ay1 = rotate(-size - lead_len, 0)
-    ax2, ay2 = rotate(-size, 0)
-    canvas.create_line(ax1, ay1, ax2, ay2, fill=color, width=2*scale)
-    
-    # 三角形
-    canvas.create_polygon(
-        *rotate(-size, -size),
-        *rotate(-size, size),
-        *rotate(size, 0),
-        outline=color, fill='', width=2*scale
-    )
-    
-    # 阴极竖线
-    canvas.create_line(*rotate(size, -size), *rotate(size, size),
-                      fill=color, width=2*scale)
-    
-    # 阴极引线
-    cx1, cy1 = rotate(size, 0)
-    cx2, cy2 = rotate(size + lead_len, 0)
-    canvas.create_line(cx1, cy1, cx2, cy2, fill=color, width=2*scale)
-    
-    if label:
-        canvas.create_text(x, y-size-10, text=label, fill=color, font=("Arial", 9))
-    
-    return {
-        'anode': (ax1, ay1),
-        'cathode': (cx2, cy2)
-    }
+
 
 
 @ComponentRenderer.register_node(4)  # NODE_TYPE_OPAMP

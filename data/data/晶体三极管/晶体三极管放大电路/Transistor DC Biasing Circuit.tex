@@ -1,0 +1,40 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\tikzset{every node/.style={font=\large}}
+\tikzset{every draw/.style={font=\large}}
+\begin{document}
+\begin{circuitikz}[line width=1pt]
+\ctikzset{tripoles/en amp/input height=0.5};
+\ctikzset{inductors/scale=1.2, inductor=american}
+\ctikzset{tripoles/mos style/arrows}
+\draw (3.0,24.0) to[short] (6.0,24.0);
+\draw (3.0,24.0) to[short] (3.0,21.0);
+\draw (3.0,21.0) to[generic, l=$RC$, ] (3.0,18.0);
+\draw (9.0,21.0) to[generic, l=$RB1$, ] (12.0,21.0);
+\draw (12.0,21.0) to[short] (15.0,21.0);
+\draw (12.0,21.0) to[generic, l=$RB2$, ] (12.0,18.0);
+\draw (15.0,21.0) to [short] (15.0,18.0);
+\ctikzset{american};
+\draw (15.0,21.0) to[rmeter, t, v=$VBB$] (15.0,18.0);
+\ctikzset{european};
+\draw (3.0,18.0) to [short] (6.0,18.0);
+\ctikzset{american};
+\draw (3.0,18.0) to[rmeter, t, v=$VCC$] (6.0,18.0);
+\ctikzset{european};
+\draw (6.0,18.0) to[short] (9.0,18.0);
+\draw (6.0,18.0) to[short] (6.0,15.0);
+\draw (9.0,18.0) to[short] (12.0,18.0);
+\draw (12.0,18.0) to[short] (15.0,18.0);
+% NPN/PNP Transistor Q_{T}
+\node[npn, rotate=0, xscale=-1] (QT) at (6.0,21.0) {};
+\node[right, rotate=0] at (6.5,21.0) {$T$};
+\draw (QT.B) -- (9.0,21.0);
+\draw (QT.C) |- (6.0,24.0);
+\draw (QT.E) |- (6.0,18.0);
+% GND GND_{0}
+\draw (6.0,15.0) node[ground] {};
+\node[circ] at (6.0,18.0) {};
+
+\end{circuitikz}
+\end{document}

@@ -288,9 +288,9 @@ class GridCanvas(tk.Canvas):
             # 智能防吸附：如果目标节点是引脚本身的逻辑邻居，则视为未选中
             # 让用户感觉连线是从引脚自由出发，而不是立即吸附到旁边的网格点
             if self.pin_target:
-                logical_neighbor = self.model.get_pin_node(i, j, pin_name)
-                if logical_neighbor and self.pin_target == logical_neighbor:
-                    self.pin_target = None
+                # 移除防吸附逻辑，允许用户直观看到引脚所在的节点被选中
+                # 这样用户就知道连接是从这个节点开始的
+                pass
 
             if (i, j) in self.pin_positions and pin_name in self.pin_positions[(i, j)]:
                 px, py = self.pin_positions[(i, j)][pin_name]
@@ -577,11 +577,16 @@ class GridCanvas(tk.Canvas):
                             vx = (nj - j) * offset
                             vy = (ni - i) * offset
                             
+                            # DEBUG PRINT
+                            # print(f"Wire Check: ({i},{j})->({ni},{nj}) Pin {p} Found. Dir {direction}. Offset ({vx}, {vy})")
+                            
                             if direction == 'h':
                                 if abs(vy) < 0.01: # Aligned (Horizontal Pin, Horizontal Wire)
                                     x1 += vx
+                                    # print(f"  Extending x1 by {vx}")
                                 else: # Misaligned (Vertical Pin, Horizontal Wire) -> Draw Corner
                                     self.create_line(x1, y1, x1+vx, y1+vy, fill=self.EDGE_COLOR, width=2)
+                                    # print(f"  Corner join {p}")
                             else: # v
                                 if abs(vx) < 0.01: # Aligned (Vertical Pin, Vertical Wire)
                                     y1 += vy
@@ -630,7 +635,12 @@ class GridCanvas(tk.Canvas):
             unit_prefixes = ["", "k", "m", "μ", "n", "p"]
             unit_prefix = unit_prefixes[value_unit] if value_unit < len(unit_prefixes) else ""
             parts = []
-            if label: parts.append(f"{comp_config.label_prefix}{label}")
+            if label:
+                # 只有当 label 是数字时才添加前缀
+                if str(label).isdigit():
+                    parts.append(f"{comp_config.label_prefix}{label}")
+                else:
+                    parts.append(str(label))
             if value > 0:
                 value_str = f"{value}{unit_prefix}" if unit_prefix else str(value)
                 parts.append(f"{value_str}{comp_config.unit}" if comp_config.unit else value_str)
@@ -653,7 +663,14 @@ class GridCanvas(tk.Canvas):
                     
                     comp_config = get_node_component(int(node_type))
                     color = comp_config.color if comp_config else "#333"
-                    label_text = f"{comp_config.label_prefix}{label}" if comp_config else ""
+                    if comp_config:
+                        # 只有当 label 是数字时才添加前缀
+                        if str(label).isdigit():
+                            label_text = f"{comp_config.label_prefix}{label}"
+                        else:
+                            label_text = str(label)
+                    else:
+                        label_text = ""
                     
                     # 绘制并获取引脚位置（传入 cell_size 使引脚对齐到相邻节点）
                     pins = ComponentRenderer.draw_node_component(

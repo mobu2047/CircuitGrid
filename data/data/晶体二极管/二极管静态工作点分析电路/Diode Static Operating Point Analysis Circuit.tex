@@ -1,0 +1,20 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\tikzset{every node/.style={font=\large}}
+\tikzset{every draw/.style={font=\large}}
+\begin{document}
+\begin{circuitikz}[line width=1pt]
+\ctikzset{tripoles/en amp/input height=0.5};
+\ctikzset{inductors/scale=1.2, inductor=american}
+\ctikzset{tripoles/mos style/arrows}
+\draw (0.0,12.0) to[generic, l=$R$, ] (3.0,12.0);
+\draw (0.0,12.0) to [short] (0.0,9.0);
+\ctikzset{american};
+\draw (0.0,12.0) to[rmeter, t, v=$vdd$] (0.0,9.0);
+\ctikzset{european};
+\draw (3.0,12.0) to[D, l=$D$, ] (3.0,9.0);
+\draw (0.0,9.0) to[short] (3.0,9.0);
+
+\end{circuitikz}
+\end{document}

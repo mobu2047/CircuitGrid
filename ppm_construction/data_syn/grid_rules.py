@@ -21,7 +21,8 @@ import readchar
     TYPE_VCVS, # Voltage-Controlled Voltage Source --> E in SPICE
     TYPE_CCCS, # Current-Controlled Current Source --> F in SPICE
     TYPE_CCVS, # Current-Controlled Voltage Source --> H in SPICE
-) = tuple( range(11) )
+    TYPE_DIODE, # Diode
+) = tuple( range(12) )
 NUM_NORMAL=6
 
 # 节点上元件（Node Components）- 多端元件
@@ -29,7 +30,7 @@ NUM_NORMAL=6
     NODE_TYPE_NONE,
     NODE_TYPE_TRANSISTOR_NPN,  # NPN三极管
     NODE_TYPE_TRANSISTOR_PNP,  # PNP三极管
-    NODE_TYPE_DIODE,           # 二极管
+    NODE_TYPE_RESERVED_DIODE,  # 原二极管位置（保留ID防偏移）
     NODE_TYPE_OPAMP,           # 运放
     NODE_TYPE_MOSFET,          # N沟道MOSFET
     NODE_TYPE_MOSFET_P,        # P沟道MOSFET
@@ -122,7 +123,8 @@ components_latex_info = [
     ("cisource", "", ""),   # 7: TYPE_VCCS
     ("cvsource", "", ""),   # 8: TYPE_VCVS
     ("cisource", "", ""),   # 9: TYPE_CCCS
-    ("cvsource", "", "")    # 10: TYPE_CCVS
+    ("cvsource", "", ""),   # 10: TYPE_CCVS
+    ("D", "D", "")          # 11: TYPE_DIODE
 ]
 
 # 节点元件的LaTeX信息: (circuitikz_type, label_prefix, unit)
@@ -214,6 +216,15 @@ def get_latex_line_draw(x1, y1, x2, y2,
                 unit_scale = unit_scales[unit_mode]
                 if int(note[1:]) <= 9:
                     raise NotImplementedError
+                if int(real_value) == 0:
+                    # Fallback to label if value is 0 (value suppression)
+                    if label_subscript_type == LABEL_TYPE_NUMBER:
+                        if type_number == TYPE_RESISTOR:
+                            labl = f"{comp_label_main}_{{ {int(label_subscript)} }}" # e.g. R_{1}
+                        elif type_number == TYPE_VOLTAGE_SOURCE or type_number == TYPE_CURRENT_SOURCE:
+                            labl = f"{comp_label_main}_{{ S{int(label_subscript)} }}" # e.g. U_{S1}
+                    elif label_subscript_type == LABEL_TYPE_STRING:
+                        labl = f"{label_subscript}"
                 elif int(note[1:]) > 9:
                     labl = f"{int(real_value)} \\mathrm{{ {unit_scale}{comp_standard_unit} }}"
             else:
@@ -221,6 +232,12 @@ def get_latex_line_draw(x1, y1, x2, y2,
                     labl = f"{value} U_{{ {control_label} }}"
                 elif type_number == TYPE_CCCS or type_number == TYPE_CCVS:
                     labl = f"{value} I_{{ {control_label} }}"
+                elif type_number == TYPE_DIODE:
+                    # Diode in value mode should still show label
+                    if label_subscript_type == LABEL_TYPE_STRING:
+                        labl = f"{label_subscript}"
+                    else:
+                        labl = f"{comp_label_main}_{{ {int(label_subscript)} }}"
 
         else:       # label-type circuit
             if type_number < NUM_NORMAL:
@@ -231,7 +248,7 @@ def get_latex_line_draw(x1, y1, x2, y2,
                         labl = f"{comp_label_main}_{{ S{int(label_subscript)} }}" # e.g. U_{S1}
 
                 elif label_subscript_type == LABEL_TYPE_STRING:
-                    labl = f"{comp_label_main}_{{ {label_subscript} }}" # e.g. R_{load}
+                    labl = f"{label_subscript}" # e.g. R_{load} -> load or VDD
             
             else:
                 if type_number == TYPE_VCCS or type_number == TYPE_VCVS:
@@ -323,7 +340,7 @@ def get_latex_line_draw(x1, y1, x2, y2,
             return ret
 
 # NOTE: Plot resistance, capacitance & inductance
-        elif type_number in [TYPE_RESISTOR, TYPE_CAPACITOR, TYPE_INDUCTOR]:
+        elif type_number in [TYPE_RESISTOR, TYPE_CAPACITOR, TYPE_INDUCTOR, TYPE_DIODE]:
             ret = f"\\draw ({x1:.1f},{y1:.1f}) to[{comp_circuitikz_type}, l=${labl}$, ] ({x2:.1f},{y2:.1f});\n"
 
             v_plot_extra = ""
@@ -465,6 +482,8 @@ def get_node_component_draw(x, y,
     if node_type == NODE_TYPE_NONE:
         return ""
     
+    val_label = str(int(label)) if (isinstance(label, int) or str(label).isdigit()) else str(label)
+
     if style == "chinese":
         # #region agent log
         import json
@@ -501,6 +520,8 @@ def get_node_component_draw(x, y,
         
         comp_type = node_info[0]
         comp_label_main = node_info[1]
+        
+        display_label = f"{comp_label_main}_{{{val_label}}}" if val_label.isdigit() else f"{val_label}"
         
         # #region agent log
         try:
@@ -685,8 +706,8 @@ def get_node_component_draw(x, y,
             if x_scale == -1: options += ", xscale=-1"
             if y_scale == -1: options += ", yscale=-1"
             
-            ret = f"% NPN/PNP Transistor {comp_label_main}_{{{int(label)}}}\n"
-            ret += f"\\node[{options}] ({comp_label_main}{int(label)}) at ({tx:.1f},{ty:.1f}) {{}};\n"
+            ret = f"% NPN/PNP Transistor {comp_label_main}_{{{val_label}}}\n"
+            ret += f"\\node[{options}] ({comp_label_main}{val_label}) at ({tx:.1f},{ty:.1f}) {{}};\n"
 
             # 标签方向随朝向，默认在右侧（朝右时），其余方向在适当侧
             label_position = {
@@ -709,10 +730,10 @@ def get_node_component_draw(x, y,
 
             # 确保文字不随节点旋转：使用 rotate=0 明确指定文字不旋转
             # 直接使用普通文本节点，不应用任何翻转
-            ret += f"\\node[{pos}, rotate=0] at ({tx + dx:.1f},{ty + dy:.1f}) {{${comp_label_main}_{{{int(label)}}}$}};\n"
+            ret += f"\\node[{pos}, rotate=0] at ({tx + dx:.1f},{ty + dy:.1f}) {{${display_label}$}};\n"
 
             
-            ret += f"\\draw ({comp_label_main}{int(label)}.B) -- ({bx:.1f},{by:.1f});\n"
+            ret += f"\\draw ({comp_label_main}{val_label}.B) -- ({bx:.1f},{by:.1f});\n"
             
             # #region agent log
             try:
@@ -720,8 +741,8 @@ def get_node_component_draw(x, y,
                     f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"grid_rules.py:587","message":"Before NPN/PNP pin connection","data":{"orientation":orientation,"rotation":rotation,"node_type":node_type,"cx":cx,"cy":cy,"ex":ex,"ey":ey},"timestamp":int(__import__("time").time()*1000)}) + "\n")
             except: pass
 
-            ret += f"\\draw ({comp_label_main}{int(label)}.C) |- ({cx:.1f},{cy:.1f});\n"
-            ret += f"\\draw ({comp_label_main}{int(label)}.E) |- ({ex:.1f},{ey:.1f});\n"
+            ret += f"\\draw ({comp_label_main}{val_label}.C) |- ({cx:.1f},{cy:.1f});\n"
+            ret += f"\\draw ({comp_label_main}{val_label}.E) |- ({ex:.1f},{ey:.1f});\n"
             
             # #region agent log
             try:
@@ -732,18 +753,7 @@ def get_node_component_draw(x, y,
 
             return ret
         
-        elif node_type == NODE_TYPE_DIODE:
-            # 二极管方向也可用orientation
-            orientation_map_d = {
-                0: 90,
-                1: 0,
-                2: -90,
-                3: 180
-            }
-            rotation = orientation_map_d.get(orientation, 0)
-            ret = f"% Diode {comp_label_main}_{{{int(label)}}}\n"
-            ret += f"\\draw ({x-0.5:.1f},{y:.1f}) to[D, l=${comp_label_main}_{{{int(label)}}}$, rotate={rotation}] ({x+0.5:.1f},{y:.1f});\n"
-            return ret
+
 
         elif node_type == NODE_TYPE_OPAMP:
             # 运放方向依赖orientation参数
@@ -754,10 +764,10 @@ def get_node_component_draw(x, y,
                 3: 180
             }
             rotation = orientation_map_opamp.get(orientation, 0)
-            ret = f"% Op Amp {comp_label_main}_{{{int(label)}}}\n"
+            ret = f"% Op Amp {comp_label_main}_{{{val_label}}}\n"
             # 用户反馈：左右方向上下颠倒，上下方向左右颠倒 -> 说明需要 yscale=-1 来交换 +/- 输入的位置
             # 同时也需要修复文字反转问题（去掉 xscale=-1）
-            ret += f"\\node[op amp, rotate={rotation}, yscale=-1] ({comp_label_main}{int(label)}) at ({x:.1f},{y:.1f}) {{}};\n"
+            ret += f"\\node[op amp, rotate={rotation}, yscale=-1] ({comp_label_main}{val_label}) at ({x:.1f},{y:.1f}) {{}};\n"
             # 标签朝向按朝右(right)，其它与朝向类似，可自定义
             label_position = {
                 0: "above",
@@ -778,7 +788,7 @@ def get_node_component_draw(x, y,
                 dx, dy = 0.5, 0
             # 确保文字不随节点旋转：使用 rotate=0 明确指定文字不旋转
             # 移除了 xscale=-1，因为这会导致文字镜像反转
-            ret += f"\\node[{pos}, rotate=0] at ({x+dx:.1f},{y+dy:.1f}){{${comp_label_main}_{{{int(label)}}}$}};\n"
+            ret += f"\\node[{pos}, rotate=0] at ({x+dx:.1f},{y+dy:.1f}){{${display_label}$}};\n"
             
             # 绘制运放引脚连线（使用 CircuitTikZ 的引脚名称：.+, .-, .out）
             if connections:
@@ -795,13 +805,13 @@ def get_node_component_draw(x, y,
             # 绘制连线（使用 |- 正交连线，沿着网格走线）
             if in_plus_coord:
                 ipx, ipy = in_plus_coord
-                ret += f"\\draw ({comp_label_main}{int(label)}.+) |- ({ipx:.1f},{ipy:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{val_label}.+) |- ({ipx:.1f},{ipy:.1f});\n"
             if in_minus_coord:
                 imx, imy = in_minus_coord
-                ret += f"\\draw ({comp_label_main}{int(label)}.-) |- ({imx:.1f},{imy:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{val_label}.-) |- ({imx:.1f},{imy:.1f});\n"
             if out_coord:
                 ox, oy = out_coord
-                ret += f"\\draw ({comp_label_main}{int(label)}.out) |- ({ox:.1f},{oy:.1f});\n"
+                ret += f"\\draw ({comp_label_main}{val_label}.out) |- ({ox:.1f},{oy:.1f});\n"
             
             return ret
         
@@ -1132,6 +1142,7 @@ SPICE_PREFFIX = {
     TYPE_VCVS: "E",
     TYPE_CCCS: "F",
     TYPE_CCVS: "H",
+    TYPE_DIODE: "D",
     TYPE_OPEN: "",
     TYPE_SHORT: "",
     NODE_TYPE_VIN: "V",      # 输入端口（节点元件），使用电压源前缀
@@ -1667,6 +1678,57 @@ class Circuit:
                         base_dir = 'vertical' if orientation in [0, 2] else 'horizontal'
                         ce_dir = 'horizontal' if orientation in [0, 2] else 'vertical'
                         
+                        # [FIX] Manually infer connections from wires if not provided (since auto-connect is disabled)
+                        if not connections or not any(connections.values()):
+                            connections = {}
+                            m, n = self.m, self.n
+                            
+                            # Pin deltas based on orientation (Matches GridModel)
+                            # 0=Up: B(-1,0), C(0,-1), E(0,1)
+                            # 1=Right: B(0,1), C(-1,0), E(1,0)
+                            # 2=Down: B(1,0), C(0,1), E(0,-1)
+                            # 3=Left: B(0,-1), C(1,0), E(-1,0)
+                            if orientation == 0:
+                                pin_deltas = {'base': (-1, 0), 'collector': (0, -1), 'emitter': (0, 1)}
+                            elif orientation == 1:
+                                pin_deltas = {'base': (0, 1), 'collector': (-1, 0), 'emitter': (1, 0)}
+                            elif orientation == 2:
+                                pin_deltas = {'base': (1, 0), 'collector': (0, 1), 'emitter': (0, -1)}
+                            else: # 3
+                                pin_deltas = {'base': (0, -1), 'collector': (1, 0), 'emitter': (-1, 0)}
+                                
+                            for pin, (di, dj) in pin_deltas.items():
+                                pi, pj = i + di, j + dj
+                                if 0 <= pi < m and 0 <= pj < n:
+                                    # Check for ANY wire connected to (pi, pj)
+                                    connected = False
+                                    # Check 4 directions around (pi, pj)
+                                    # Left: has_hedge[pi][pj-1]
+                                    if pj > 0 and self.has_hedge[pi][pj-1]: connected = True
+                                    # Right: has_hedge[pi][pj]
+                                    if pj < n-1 and self.has_hedge[pi][pj]: connected = True
+                                    # Up: has_vedge[pi-1][pj]
+                                    if pi > 0 and self.has_vedge[pi-1][pj]: connected = True
+                                    # Down: has_vedge[pi][pj]
+                                    if pi < m-1 and self.has_vedge[pi][pj]: connected = True
+                                    
+                                    if connected:
+                                        # Calculate phys coords (GridRules might use self.horizontal_dis if available, or just fallback)
+                                        # Here we store tuple for _coord_to_grid to parse? 
+                                        # Wait, lines below use self._coord_to_grid(*connections['base']).
+                                        # _coord_to_grid expects (x, y) phys coords? 
+                                        # Or grid coords? 
+                                        # Let's check _coord_to_grid implementation or usage.
+                                        # Usage line 1683: _coord_to_grid(*connections['base']).
+                                        # connections['base'] from GridModel is PHYS coords (x, y).
+                                        # So I should store PHYS coords.
+                                        px = self.horizontal_dis[pj]
+                                        py = self.vertical_dis[pi]
+                                        connections[pin] = (px, py)
+                            
+                            # Update self.node_comp_connections so get_node_component_draw sees it too
+                            self.node_comp_connections[i][j] = connections
+                        
                         if connections:
                             if 'base' in connections:
                                 bi, bj = self._coord_to_grid(*connections['base'])
@@ -1702,6 +1764,41 @@ class Circuit:
                         # gate 方向：0/2 为垂直，1/3 为水平
                         gate_dir = 'vertical' if orientation in [0, 2] else 'horizontal'
                         ds_dir = 'horizontal' if orientation in [0, 2] else 'vertical'
+                        
+                        # [FIX] Manually infer connections for MOSFET if missing
+                        if not connections or not any(connections.values()):
+                            connections = {}
+                            m, n = self.m, self.n
+                            
+                            # Pin deltas (Matches GridModel _auto_connect_mosfet)
+                            # 0=Up: G(-1,0), D(0,-1), S(0,1)
+                            # 1=Right: G(0,1), D(-1,0), S(1,0)
+                            # 2=Down: G(1,0), D(0,1), S(0,-1)
+                            # 3=Left: G(0,-1), D(1,0), S(-1,0)
+                            if orientation == 0:
+                                pin_deltas = {'gate': (-1, 0), 'drain': (0, -1), 'source': (0, 1)}
+                            elif orientation == 1:
+                                pin_deltas = {'gate': (0, 1), 'drain': (-1, 0), 'source': (1, 0)}
+                            elif orientation == 2:
+                                pin_deltas = {'gate': (1, 0), 'drain': (0, 1), 'source': (0, -1)}
+                            else: # 3
+                                pin_deltas = {'gate': (0, -1), 'drain': (1, 0), 'source': (-1, 0)}
+                                
+                            for pin, (di, dj) in pin_deltas.items():
+                                pi, pj = i + di, j + dj
+                                if 0 <= pi < m and 0 <= pj < n:
+                                    connected = False
+                                    if pj > 0 and self.has_hedge[pi][pj-1]: connected = True
+                                    if pj < n-1 and self.has_hedge[pi][pj]: connected = True
+                                    if pi > 0 and self.has_vedge[pi-1][pj]: connected = True
+                                    if pi < m-1 and self.has_vedge[pi][pj]: connected = True
+                                    
+                                    if connected:
+                                        px = self.horizontal_dis[pj]
+                                        py = self.vertical_dis[pi]
+                                        connections[pin] = (px, py)
+                            
+                            self.node_comp_connections[i][j] = connections
                         
                         if connections:
                             if 'gate' in connections:
@@ -1865,7 +1962,7 @@ class Circuit:
                         # 三极管SPICE格式: Q<name> <collector> <base> <emitter> <model>
                         model_name = "NPN_MODEL" if br["type"] == NODE_TYPE_TRANSISTOR_NPN else "PNP_MODEL"
                         spice_str += "Q%s %s %s %s %s\n" % (
-                            int(br["label"]),
+                            str(br["label"]),
                             br["collector_node"],
                             br["base_node"],
                             br["emitter_node"],
@@ -1874,7 +1971,7 @@ class Circuit:
                     elif br["type"] == NODE_TYPE_MOSFET:
                         # N 沟道 MOSFET SPICE格式: M<name> <drain> <gate> <source> <body> <model>
                         spice_str += "M%s %s %s %s 0 NMOS_MODEL\n" % (
-                            int(br["label"]),
+                            str(br["label"]),
                             br.get("drain_node", "0"),
                             br.get("gate_node", "0"),
                             br.get("source_node", "0")
@@ -1882,7 +1979,7 @@ class Circuit:
                     elif br["type"] == NODE_TYPE_MOSFET_P:
                         # P 沟道 MOSFET SPICE格式: M<name> <drain> <gate> <source> <body> <model>
                         spice_str += "M%s %s %s %s 0 PMOS_MODEL\n" % (
-                            int(br["label"]),
+                            str(br["label"]),
                             br.get("drain_node", "0"),
                             br.get("gate_node", "0"),
                             br.get("source_node", "0")
@@ -1911,7 +2008,7 @@ class Circuit:
                         value = br.get("value", 0)
                         value_unit = br.get("value_unit", 0)
                         value_str = str(int(value)) + unit_scales[value_unit] if value > 0 else "0"
-                        label_str = "" if br.get("label", 0) == 0 else str(int(br["label"]))
+                        label_str = "" if str(br.get("label", 0)) == "0" else str(br["label"])
                         spice_str += "%s%s %s 0 %s\n" % (port_name, label_str, br.get("n1", "0"), value_str)
                     # GND 不需要生成 SPICE 代码，因为它就是节点 0
                     continue  # 跳过后续边上元件的处理
@@ -2112,7 +2209,7 @@ class Circuit:
                                                 measure_label=self.vcomp_measure_label[i][j],
                                                 measure_direction=self.vcomp_measure_direction[i][j],
                                                 direction=self.vcomp_direction[i][j],
-                                                label_subscript_type=int(not self.label_numerical_subscript),
+                                                label_subscript_type=0 if (isinstance(self.vcomp_label[i][j], int) or str(self.vcomp_label[i][j]).isdigit()) else 1,
                                                 control_label=self.vcomp_control_meas_label[i][j],
                                                 note=self.note
                                             )
@@ -2142,7 +2239,7 @@ class Circuit:
                                                 measure_label=self.hcomp_measure_label[i][j],
                                                 measure_direction=self.hcomp_measure_direction[i][j],
                                                 direction=self.hcomp_direction[i][j],
-                                                label_subscript_type=int(not self.label_numerical_subscript),
+                                                label_subscript_type=0 if (isinstance(self.hcomp_label[i][j], int) or str(self.hcomp_label[i][j]).isdigit()) else 1,
                                                 control_label=self.hcomp_control_meas_label[i][j],
                                                 note=self.note
                                             )

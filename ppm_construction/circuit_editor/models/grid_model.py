@@ -21,7 +21,7 @@ class EdgeData:
     """边数据"""
     exists: bool = False
     comp_type: int = 0
-    label: int = 0
+    label: Any = 0
     value: int = 0
     value_unit: int = 0
     direction: int = 0
@@ -31,7 +31,7 @@ class EdgeData:
 class NodeData:
     """节点元件数据"""
     comp_type: int = 0
-    label: int = 0
+    label: Any = 0
     orientation: int = 1  # 0=up, 1=right, 2=down, 3=left
     connections: Optional[Dict] = None
 
@@ -60,7 +60,7 @@ class GridModel:
         # 水平边 (m, n-1)
         self.has_hedge = np.zeros((m, n-1), dtype=int)
         self.hcomp_type = np.zeros((m, n-1), dtype=int)
-        self.hcomp_label = np.zeros((m, n-1), dtype=int)
+        self.hcomp_label = np.zeros((m, n-1), dtype=object)
         self.hcomp_value = np.zeros((m, n-1), dtype=int)
         self.hcomp_value_unit = np.zeros((m, n-1), dtype=int)
         self.hcomp_direction = np.zeros((m, n-1), dtype=int)
@@ -68,14 +68,14 @@ class GridModel:
         # 垂直边 (m-1, n)
         self.has_vedge = np.zeros((m-1, n), dtype=int)
         self.vcomp_type = np.zeros((m-1, n), dtype=int)
-        self.vcomp_label = np.zeros((m-1, n), dtype=int)
+        self.vcomp_label = np.zeros((m-1, n), dtype=object)
         self.vcomp_value = np.zeros((m-1, n), dtype=int)
         self.vcomp_value_unit = np.zeros((m-1, n), dtype=int)
         self.vcomp_direction = np.zeros((m-1, n), dtype=int)
         
         # 节点元件 (m, n)
         self.node_comp_type = np.zeros((m, n), dtype=int)
-        self.node_comp_label = np.zeros((m, n), dtype=int)
+        self.node_comp_label = np.zeros((m, n), dtype=object)
         self.node_comp_orientation = np.ones((m, n), dtype=int)  # 默认朝右
         self.node_comp_connections = np.empty((m, n), dtype=object)
         for i in range(m):
@@ -119,7 +119,7 @@ class GridModel:
         return False
     
     def set_hedge_component(self, i: int, j: int, comp_type: int, 
-                           label: int = 0, value: int = 0, 
+                           label: Any = 0, value: int = 0, 
                            value_unit: int = 0, direction: int = 0):
         """设置水平边元件"""
         print(f"[DEBUG] set_hedge_component({i}, {j}, type={comp_type})")
@@ -134,7 +134,7 @@ class GridModel:
             self.notify_update()
     
     def set_vedge_component(self, i: int, j: int, comp_type: int,
-                           label: int = 0, value: int = 0,
+                           label: Any = 0, value: int = 0,
                            value_unit: int = 0, direction: int = 0):
         """设置垂直边元件"""
         print(f"[DEBUG] set_vedge_component({i}, {j}, type={comp_type})")
@@ -154,7 +154,7 @@ class GridModel:
             return EdgeData(
                 exists=bool(self.has_hedge[i][j]),
                 comp_type=int(self.hcomp_type[i][j]),
-                label=int(self.hcomp_label[i][j]),
+                label=self.hcomp_label[i][j],
                 value=int(self.hcomp_value[i][j]),
                 value_unit=int(self.hcomp_value_unit[i][j]),
                 direction=int(self.hcomp_direction[i][j])
@@ -167,7 +167,7 @@ class GridModel:
             return EdgeData(
                 exists=bool(self.has_vedge[i][j]),
                 comp_type=int(self.vcomp_type[i][j]),
-                label=int(self.vcomp_label[i][j]),
+                label=self.vcomp_label[i][j],
                 value=int(self.vcomp_value[i][j]),
                 value_unit=int(self.vcomp_value_unit[i][j]),
                 direction=int(self.vcomp_direction[i][j])
@@ -215,32 +215,12 @@ class GridModel:
         返回: connections 字典 {'base': (x,y), 'collector': (x,y), 'emitter': (x,y)}
         注意：返回的是物理坐标（与手动连接格式一致），不是网格坐标
         """
+        return {} # Disable auto connection
+        """
         connections = {}
-        m, n = self.m, self.n
-        
-        # 根据朝向定义各引脚连接的相对位置
-        # (di, dj) 表示相对于元件位置的偏移（网格坐标）
-        if orientation == 0:  # up
-            pin_dirs = {'base': (-1, 0), 'collector': (0, -1), 'emitter': (0, 1)}
-        elif orientation == 1:  # right
-            pin_dirs = {'base': (0, 1), 'collector': (-1, 0), 'emitter': (1, 0)}
-        elif orientation == 2:  # down
-            pin_dirs = {'base': (1, 0), 'collector': (0, 1), 'emitter': (0, -1)}
-        else:  # left
-            pin_dirs = {'base': (0, -1), 'collector': (1, 0), 'emitter': (-1, 0)}
-        
-        # 只设置引脚连接，不创建短路边（由用户手动连线）
-        # 将网格坐标转换为物理坐标（与手动连接格式一致）
-        for pin_name, (di, dj) in pin_dirs.items():
-            ni, nj = i + di, j + dj
-            # 检查目标节点是否在网格范围内
-            if 0 <= ni < m and 0 <= nj < n:
-                # 转换为物理坐标（与手动连接格式一致）
-                phys_x = self.horizontal_dis[nj]
-                phys_y = self.vertical_dis[ni]
-                connections[pin_name] = (phys_x, phys_y)
-        
+        # ... logic ...
         return connections
+        """
     
     def _auto_connect_mosfet(self, i: int, j: int, orientation: int) -> Dict:
         """
@@ -255,32 +235,12 @@ class GridModel:
         返回: connections 字典 {'gate': (x,y), 'drain': (x,y), 'source': (x,y)}
         注意：返回的是物理坐标（与手动连接格式一致），不是网格坐标
         """
+        return {} # Disable auto connection
+        """
         connections = {}
-        m, n = self.m, self.n
-        
-        # 根据朝向定义各引脚连接的相对位置
-        # (di, dj) 表示相对于元件位置的偏移（网格坐标）
-        if orientation == 0:  # up
-            pin_dirs = {'gate': (-1, 0), 'drain': (0, -1), 'source': (0, 1)}
-        elif orientation == 1:  # right
-            pin_dirs = {'gate': (0, 1), 'drain': (-1, 0), 'source': (1, 0)}
-        elif orientation == 2:  # down
-            pin_dirs = {'gate': (1, 0), 'drain': (0, 1), 'source': (0, -1)}
-        else:  # left
-            pin_dirs = {'gate': (0, -1), 'drain': (1, 0), 'source': (-1, 0)}
-        
-        # 只设置引脚连接，不创建短路边（由用户手动连线）
-        # 将网格坐标转换为物理坐标（与手动连接格式一致）
-        for pin_name, (di, dj) in pin_dirs.items():
-            ni, nj = i + di, j + dj
-            # 检查目标节点是否在网格范围内
-            if 0 <= ni < m and 0 <= nj < n:
-                # 转换为物理坐标（与手动连接格式一致）
-                phys_x = self.horizontal_dis[nj]
-                phys_y = self.vertical_dis[ni]
-                connections[pin_name] = (phys_x, phys_y)
-        
+        # ... logic ...
         return connections
+        """
 
     def get_pin_node(self, i: int, j: int, pin_name: str) -> Optional[Tuple[int, int]]:
         """获取元件引脚对应的网格节点坐标"""

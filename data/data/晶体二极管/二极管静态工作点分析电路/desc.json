@@ -1,0 +1,51 @@
+{
+  "circuit_name": "Diode Static Operating Point Analysis Circuit (Load Line Graphical Analysis Circuit)",
+  "domain": "Fundamentals of Analog Electronics / Semiconductor Diodes and Basic Circuits",
+  "keywords": ["Operating point analysis", "Graphical analysis method", "Load line", "Nonlinear circuit"],
+  "components": [
+    {
+      "symbol": "VDD",
+      "name": "DC Voltage Source",
+      "function": "Provides energy for the entire circuit, setting the total voltage reference for operation."
+    },
+    {
+      "symbol": "D",
+      "name": "Crystal Diode",
+      "function": "Core nonlinear component. The relationship between its current and terminal voltage is described by the nonlinear equation I = f(V)."
+    },
+    {
+      "symbol": "R",
+      "name": "Linear Resistor",
+      "function": "Current-limiting and load resistor. Together with VDD, it forms the external linear circuit, determining the load line."
+    },
+    {
+      "symbol": "K",
+      "name": "Switch",
+      "function": "Controls the circuit's on/off state or changes input conditions for different analysis scenarios."
+    }
+  ],
+  "circuit_function": {
+    "summary": "Determines the actual operating voltage (V) and current (I) of a nonlinear component (diode) within a specific linear circuit environment, i.e., solves for its static operating point (Q-point).",
+    "detailed": "The circuit is divided into a nonlinear part (diode D) and a linear part (power supply VDD and resistor R). By simultaneously solving the load line equation V = VDD - I*R and the diode's volt-ampere characteristic curve I = f(V), the operating point is obtained graphically."
+  },
+  "topology": {
+    "type": "Simple series topology",
+    "flow": "VDD → K → D → R → VDD",
+    "key_equations": ["V = VDD - I * R", "I = f(V)"]
+  },
+  "characteristics": {
+    "analysis_method": "Load Line Method / Graphical Analysis Method",
+    "advantages": ["Simple structure", "Intuitive for teaching", "Clear concept", "Shows how the operating point shifts with parameter changes"],
+    "disadvantages": ["Limited accuracy", "Depends on accurate characteristic curves", "Not suitable for complex circuit calculations"]
+  },
+  "applications": {
+    "primary_use": ["Teaching demonstration", "Introductory analysis of nonlinear circuits"],
+    "typical_scenarios": ["Basic electronics courses", "Fundamental circuit design teaching"],
+    "variants": ["Replace diode with other nonlinear components (e.g., Zener diode, LED)"]
+  },
+  "precautions": {
+    "safety": "Low-voltage, low-current teaching model with no special safety hazards.",
+    "component_selection": "Ensure resistor R is large enough to limit diode current within the safe operating range.",
+    "debugging_tips": "Understand that the load line slope is determined by R (-1/R) and its intercept by VDD."
+  }
+}

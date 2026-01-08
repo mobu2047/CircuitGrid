@@ -1,0 +1,62 @@
+{
+  "circuit_name": "Transistor DC Biasing Circuit (Thévenin Equivalent Simplified Circuit)",
+  "domain": "Fundamentals of Analog Electronics / Transistor Amplifier Circuits",
+  "keywords": ["DC biasing", "Quiescent operating point", "Thévenin equivalent", "Transistor amplification", "Base voltage divider"],
+  "components": [
+    {
+      "symbol": "VCC",
+      "name": "DC Power Supply",
+      "function": "Provides DC operating voltage for the entire circuit, powering both input and output stages."
+    },
+    {
+      "symbol": "RB1, RB2",
+      "name": "Base Voltage Divider Resistors",
+      "function": "Forms a voltage divider network to provide appropriate bias voltage V_BB to the transistor base."
+    },
+    {
+      "symbol": "RB",
+      "name": "Equivalent Base Resistor",
+      "function": "Parallel equivalent resistance of RB1 and RB2, representing the internal resistance in the Thévenin equivalent circuit."
+    },
+    {
+      "symbol": "RC",
+      "name": "Collector Resistor",
+      "function": "Converts collector current to voltage, limits collector current, and affects output voltage swing."
+    },
+    {
+      "symbol": "T",
+      "name": "Crystal Transistor (NPN type)",
+      "function": "Core amplifying element; when operating in active mode, it provides current amplification (IC = β × IB)."
+    }
+  ],
+  "circuit_function": {
+    "summary": "Establishes a suitable quiescent operating point for the transistor to operate in the active region, providing the DC foundation for subsequent AC signal amplification.",
+    "detailed": "A single DC power supply VCC powers both the transistor's input and output stages. The input stage uses RB1 and RB2 as a voltage divider to provide base bias voltage V_BB, while the output stage consists of VCC and RC. The input circuit is simplified using Thévenin's theorem to an equivalent voltage source V_BB and equivalent resistance RB, enabling calculation of base current IB, collector current IC, and collector-emitter voltage VCE to verify transistor operation in active mode."
+  },
+  "topology": {
+    "type": "Common-emitter amplifier DC biasing topology (single-supply configuration)",
+    "flow": "Input loop: VCC → RB1/RB2 voltage divider → Base-Emitter → Ground; Output loop: VCC → RC → Collector-Emitter → Ground",
+    "key_equations": [
+      "V_BB = V_CC × [R_B2/(R_B1 + R_B2)]",
+      "R_B = R_B1 // R_B2 = (R_B1 × R_B2)/(R_B1 + R_B2)",
+      "I_B = (V_BB - V_BE(on))/R_B",
+      "I_C = β × I_B",
+      "V_CE = V_CC - I_C × R_C"
+    ]
+  },
+  "characteristics": {
+    "analysis_method": "Thévenin equivalent simplification, Quiescent point calculation",
+    "advantages": ["Single power supply reduces component count", "Simplified circuit for easier analysis and design", "Stable bias through resistive voltage divider", "Thévenin equivalent simplifies complex circuit analysis"],
+    "disadvantages": ["Bias voltage affected by supply voltage and resistor tolerance", "Temperature variations affect operating point stability", "β variations influence collector current"]
+  },
+  "applications": {
+    "primary_use": ["DC biasing for transistor amplifier circuits", "Setting quiescent operating points"],
+    "typical_scenarios": ["Various transistor amplifiers (audio, RF, etc.)", "Analog circuit design education", "Signal amplification stages in electronic devices"],
+    "variants": ["Adding emitter resistor for improved stability", "Using Zener diodes for more stable bias", "Current source biasing configurations"]
+  },
+  "precautions": {
+    "safety": "Low-voltage DC circuit; ensure correct power supply polarity to prevent transistor damage from overcurrent.",
+    "component_selection": "Resistor values must ensure transistor operation in active region (V_CE > V_BE and V_CE < V_CC); account for actual β variations in device selection.",
+    "debugging_tips": "When measuring quiescent point, first verify V_BE ≈ 0.7V (silicon transistor), then calculate to confirm reasonable IC and VCE values; low VCE may indicate saturation, high VCE may indicate cutoff."
+  }
+}

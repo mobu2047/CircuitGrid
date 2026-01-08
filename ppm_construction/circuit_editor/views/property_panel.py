@@ -226,13 +226,13 @@ class PropertyPanel(ttk.Frame):
                 edge_direction = 0 if self.edge_direction_var.get() == "Forward" else 1
                 if direction == 'h':
                     self.model.set_hedge_component(i, j, comp.type_id,
-                                                   label=int(self.edge_label_var.get() or 0),
+                                                   label=self.edge_label_var.get(),
                                                    value=int(self.edge_value_var.get() or 0),
                                                    value_unit=self.UNITS.index(self.edge_unit_var.get()),
                                                    direction=edge_direction)
                 else:
                     self.model.set_vedge_component(i, j, comp.type_id,
-                                                   label=int(self.edge_label_var.get() or 0),
+                                                   label=self.edge_label_var.get(),
                                                    value=int(self.edge_value_var.get() or 0),
                                                    value_unit=self.UNITS.index(self.edge_unit_var.get()),
                                                    direction=edge_direction)
@@ -243,16 +243,30 @@ class PropertyPanel(ttk.Frame):
         if not self.current_edge:
             return
         direction, i, j = self.current_edge
+        label = self.edge_label_var.get()
+        # 尝试转为数字，如果失败则保持字符串
         try:
-            label = int(self.edge_label_var.get())
-        except ValueError:
-            label = 0
+             # 如果是纯数字字符串，转为int，保持兼容性? 
+             # 用户说想要VD，所以字符串。
+             # 但如果用户输入 "1"，最好存为 int 1 还是 str "1"?
+             # LaTeX handle logic: if int, it uses `int(label)`. If str, it uses string.
+             # Better to try convert to int if possible, else keep string.
+             # Because existing logic might expect int for auto-increment logic or something?
+             # But GridRules check `type_number`?
+             # Let's check: if I store "1" (str), formatting `f"{label}"` works same as `f"{1}"`.
+             # BUT `grid_rules.py` Line 231: `int(label_subscript)`. This will crash if I pass "1" (str)? No `int("1")` works.
+             # `int("vd")` crashes.
+             # So safely try valid int.
+             if label.isdigit():
+                 label = int(label)
+        except:
+             pass
         
         if direction == 'h':
             self.model.hcomp_label[i][j] = label
         else:
             self.model.vcomp_label[i][j] = label
-        self.model._notify_observers()
+        self.model.notify_update()
     
     def _on_edge_value_changed(self, event=None):
         """边数值改变"""
@@ -268,7 +282,7 @@ class PropertyPanel(ttk.Frame):
             self.model.hcomp_value[i][j] = value
         else:
             self.model.vcomp_value[i][j] = value
-        self.model._notify_observers()
+        self.model.notify_update()
     
     def _on_edge_unit_changed(self, event=None):
         """边单位改变"""
@@ -281,7 +295,7 @@ class PropertyPanel(ttk.Frame):
             self.model.hcomp_value_unit[i][j] = unit_idx
         else:
             self.model.vcomp_value_unit[i][j] = unit_idx
-        self.model._notify_observers()
+        self.model.notify_update()
     
     def _on_edge_direction_changed(self, event=None):
         """边方向改变"""
@@ -294,7 +308,7 @@ class PropertyPanel(ttk.Frame):
             self.model.hcomp_direction[i][j] = edge_direction
         else:
             self.model.vcomp_direction[i][j] = edge_direction
-        self.model._notify_observers()
+        self.model.notify_update()
     
     def _delete_edge(self):
         """删除边"""
@@ -316,10 +330,10 @@ class PropertyPanel(ttk.Frame):
         
         for comp in get_all_node_components():
             if comp.display_name == type_name:
-                try:
-                    label = int(self.node_label_var.get() or 0)
-                except ValueError:
-                    label = 0
+                label = self.node_label_var.get()
+                if label.isdigit():
+                    label = int(label)
+
                 self.model.set_node_component(i, j, comp.type_id,
                                               label=label,
                                               orientation=self.ORIENTATIONS.index(self.node_orient_var.get()))
@@ -330,12 +344,14 @@ class PropertyPanel(ttk.Frame):
         if not self.current_node:
             return
         i, j = self.current_node
+        label = self.node_label_var.get()
         try:
-            label = int(self.node_label_var.get())
-        except ValueError:
-            label = 0
+             if label.isdigit():
+                 label = int(label)
+        except:
+             pass
         self.model.node_comp_label[i][j] = label
-        self.model._notify_observers()
+        self.model.notify_update()
     
     def _on_node_orient_changed(self, event=None):
         """节点元件朝向改变"""
@@ -344,7 +360,7 @@ class PropertyPanel(ttk.Frame):
         i, j = self.current_node
         orient = self.ORIENTATIONS.index(self.node_orient_var.get())
         self.model.node_comp_orientation[i][j] = orient
-        self.model._notify_observers()
+        self.model.notify_update()
     
     def _on_junction_changed(self):
         """交叉点标记改变"""
@@ -352,7 +368,7 @@ class PropertyPanel(ttk.Frame):
             return
         i, j = self.current_node
         self.model.junction_marker[i][j] = 1 if self.junction_var.get() else 0
-        self.model._notify_observers()
+        self.model.notify_update()
     
     def _delete_node_component(self):
         """删除节点元件"""

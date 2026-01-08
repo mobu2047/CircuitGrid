@@ -117,6 +117,11 @@ def _register_default_components():
             circuitikz_type="open", label_prefix="", unit="",
             color="#CCCCCC", has_value=False
         ),
+        ComponentConfig(
+            type_id=11, display_name="Diode", short_name="D",
+            circuitikz_type="D", label_prefix="D", unit="",
+            color="#FDCB6E", has_value=False, spice_prefix="D"
+        ),
     ]
     
     for comp in edge_components:
@@ -139,11 +144,7 @@ def _register_default_components():
             circuitikz_type="pnp", label_prefix="Q", unit="",
             color="#E17055", has_value=False, spice_prefix="Q"
         ),
-        ComponentConfig(
-            type_id=3, display_name="Diode", short_name="D",
-            circuitikz_type="D", label_prefix="D", unit="",
-            color="#FDCB6E", has_value=False, spice_prefix="D"
-        ),
+
         ComponentConfig(
             type_id=4, display_name="Op-Amp", short_name="OA",
             circuitikz_type="op amp", label_prefix="U", unit="",
